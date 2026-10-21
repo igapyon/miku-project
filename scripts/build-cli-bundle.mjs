@@ -27,6 +27,7 @@ const LEGACY_CLI_INTERNAL_MODULE_RELATIVE_PATHS = [
   "scripts/lib/cli-argv.mjs",
   "scripts/lib/cli-io.mjs",
   "scripts/lib/cli-diagnostics.mjs",
+  "scripts/lib/cli-command-specs.mjs",
   "scripts/lib/cli-presentation.mjs",
   "scripts/lib/cli-command-utils.mjs",
   "scripts/lib/cli-ai-commands.mjs",
@@ -45,6 +46,7 @@ const V1_CLI_INTERNAL_MODULE_RELATIVE_PATHS = [
   "scripts/lib/v1/cli-v1-errors.mjs",
   "scripts/lib/v1/cli-v1-canonical-json.mjs",
   "scripts/lib/v1/cli-v1-argv.mjs",
+  "scripts/lib/v1/cli-v1-presentation.mjs",
   "scripts/lib/v1/cli-v1-result.mjs",
   "scripts/lib/v1/cli-v1-io.mjs",
   "scripts/lib/v1/cli-v1-json-artifact.mjs",
@@ -336,9 +338,9 @@ function requireBundledXmldom(request, parentId = "/node_modules/@xmldom/xmldom/
     "",
     "const BUNDLED_V1_RUNTIME = (() => {",
     v1CliInternalModuleSources,
-    "return { recognizesV1Workflow, rejectUnreleasedV1Workflow, runV1VersionedRuntime };",
+    "return { recognizesV1Workflow, recognizesV1Control, runV1Control, rejectUnreleasedV1Workflow, runV1VersionedRuntime };",
     "})();",
-    "const { recognizesV1Workflow, rejectUnreleasedV1Workflow, runV1VersionedRuntime } = BUNDLED_V1_RUNTIME;",
+    "const { recognizesV1Workflow, recognizesV1Control, runV1Control, rejectUnreleasedV1Workflow, runV1VersionedRuntime } = BUNDLED_V1_RUNTIME;",
     cliSource
   ].join("\n");
 }

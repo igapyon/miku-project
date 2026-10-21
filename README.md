@@ -63,6 +63,12 @@ npm test
 
 `npm run build` には `build:core`、`build:browser-runtime`、`build:cli-bundle`、`test:fast` が含まれる。開発用コマンドの詳細、テスト運用、`local-data/` の扱いは [docs/development.md](docs/development.md) を参照してください。
 
+## v1 開発と既存機能の維持
+
+`v1.0.0` から進めているゼロベース再設計は、既存の利用者向け機能を置き換えて失わせるのではなく、既存の CLI と core API を維持したまま v1 の機能を追加する進め方です。既存 CLI の command surface、標準入出力、diagnostics、ファイル出力の振る舞いは compatibility contract test で固定し、新しい v1 workflow は別の責務として追加します。
+
+日常の変更では `npm run test:fast`、統合を含む変更の確認では `npm test` を実行します。意図して互換性を変える場合は、理由・移行方法・更新対象の contract を先に明記し、既存の振る舞いを暗黙に変えないことを原則とします。具体的な判断基準と test suite の役割は [docs/development.md#v1-開発における互換性と回帰防止](docs/development.md#v1-開発における互換性と回帰防止) を参照してください。
+
 `workplace/` は外部リポジトリの一時 clone、展開物、検証成果物などを置くローカル作業領域として扱い、`workplace/.gitkeep` 以外は Git 管理しません。
 
 `src/js/` は core runtime の Git 管理する生成物です。手編集はせず、対応する `src/ts/` を更新して `npm run build:core` で再生成します。`node_modules/`、`.npm-cache/`、`coverage/`、`bundle/`、`runtime/`、`local-data/`、`workplace/` と個人用の `.vscode/mcp.json` はローカル作業用であり、Git 管理しません。

@@ -4,6 +4,7 @@ export const FAST_SUITE = [
   "tests/mikuproject-excel-io.test.js",
   "tests/mikuproject-msproject-xml-roundtrip.test.js",
   "tests/mikuproject-project-workbook-json.test.js",
+  "tests/mikuproject-workbook-diff.test.js",
   "tests/mikuproject-project-xlsx.test.js",
   "tests/mikuproject-core-api.test.js",
   "tests/mikuproject-core-api-loader.test.js",
@@ -31,7 +32,8 @@ export const FULL_ONLY_SUITE = [
   "tests/miku-project-browser-runtime.test.js",
   "tests/mikuproject-cli-v1-r1-integration.test.js",
   "tests/mikuproject-cli-v1-runtime-manifest.test.js",
-  "tests/mikuproject-cli.test.js"
+  "tests/mikuproject-cli.test.js",
+  "tests/mikuproject-cli-review-regressions.test.js"
 ];
 
 export const FULL_SUITE = [...FAST_SUITE, ...FULL_ONLY_SUITE];

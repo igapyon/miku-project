@@ -29,7 +29,8 @@ describe("test suite topology", () => {
       "tests/miku-project-browser-runtime.test.js",
       "tests/mikuproject-cli-v1-r1-integration.test.js",
       "tests/mikuproject-cli-v1-runtime-manifest.test.js",
-      "tests/mikuproject-cli.test.js"
+      "tests/mikuproject-cli.test.js",
+      "tests/mikuproject-cli-review-regressions.test.js"
     ]);
   });
 

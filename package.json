@@ -1,6 +1,6 @@
 {
   "name": "miku-project",
-  "version": "1.0.4",
+  "version": "1.1.1",
   "private": true,
   "description": "Local HTML tool for MS Project XML round-trip experiments.",
   "license": "Apache-2.0",
@@ -34,11 +34,11 @@
     "esbuild": "^0.28.1"
   },
   "devDependencies": {
-    "ajv": "8.17.1",
+    "ajv": "8.18.0",
     "ajv-formats": "3.0.1",
     "esbuild": "^0.28.1",
     "jsdom": "^26.1.0",
     "typescript": "^5.8.2",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.11"
   }
 }

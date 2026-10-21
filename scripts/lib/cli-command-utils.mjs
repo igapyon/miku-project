@@ -25,10 +25,10 @@ export function parseJsonLike(sourceText, api, context = "input") {
   }
 }
 
-export async function loadWorkbookModel(api, inputPath, context) {
+export async function loadWorkbookInput(api, inputPath, context) {
   const stateDocument = parsePlainJson(await readTextInput(inputPath), context);
   ensureWorkbookJson(api, stateDocument, context);
-  return api.workbookJson.importAsProjectModel(stateDocument).model;
+  return api.workbookJson.importAsProjectModel(stateDocument);
 }
 
 export function parseOptionalNonNegativeInteger(value, optionName) {

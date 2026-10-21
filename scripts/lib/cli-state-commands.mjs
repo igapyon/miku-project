@@ -6,7 +6,7 @@ import {
 } from "./cli-io.mjs";
 import {
   buildChangedItems,
-  buildCommandDiagnostics,
+  buildResultDiagnostics,
   buildPatchDiagnosticsJson,
   buildPatchDiagnosticsText,
   parseDiagnosticsFormat,
@@ -15,7 +15,7 @@ import {
 import {
   ensureKind,
   ensureWorkbookJson,
-  loadWorkbookModel,
+  loadWorkbookInput,
   parseJsonLike,
   parsePlainJson
 } from "./cli-command-utils.mjs";
@@ -48,22 +48,21 @@ export async function runStateCommand(command, options, api) {
       { optionName: "--in", value: options.in, allowImplicitStdin: true }
     ]);
     const diagnosticsFormat = parseDiagnosticsFormat(options.diagnostics);
-    const model = await loadWorkbookModel(api, options.in, "state summarize");
+    const { model, warnings } = await loadWorkbookInput(api, options.in, "state summarize");
     const summary = buildStateSummary(api, model);
     return {
       output: `${JSON.stringify(summary, null, 2)}\n`,
-      diagnostics: diagnosticsFormat === "json"
-        ? buildCommandDiagnostics("state summarize", {
-          io: buildIoDiagnostics({
-            inputs: [{ optionName: "--in", value: options.in, allowImplicitStdin: true }],
-            output: options.out
-          }),
-          project_name: summary.project?.name,
-          phase_count: summary.phase_count,
-          task_count: summary.summary?.task_count,
-          milestone_count: summary.summary?.milestone_count
-        })
-        : []
+      diagnostics: buildResultDiagnostics("state summarize", diagnosticsFormat, {
+        warnings,
+        io: buildIoDiagnostics({
+          inputs: [{ optionName: "--in", value: options.in, allowImplicitStdin: true }],
+          output: options.out
+        }),
+        project_name: summary.project?.name,
+        phase_count: summary.phase_count,
+        task_count: summary.summary?.task_count,
+        milestone_count: summary.summary?.milestone_count
+      })
     };
   }
 
@@ -82,24 +81,22 @@ export async function runStateCommand(command, options, api) {
     const afterDocument = parsePlainJson(await readTextInput(options.after), "state diff --after");
     ensureWorkbookJson(api, beforeDocument, "state diff --before");
     ensureWorkbookJson(api, afterDocument, "state diff --after");
-    const beforeModel = api.workbookJson.importAsProjectModel(beforeDocument).model;
-    const diffed = api.workbookJson.importIntoProjectModel(afterDocument, beforeModel);
+    const diffed = api.workbookJson.diffDocuments(beforeDocument, afterDocument);
     const summary = buildStateDiffSummary(diffed);
     return {
       output: `${JSON.stringify(summary, null, 2)}\n`,
-      diagnostics: diagnosticsFormat === "json"
-        ? buildCommandDiagnostics("state diff", {
-          io: buildIoDiagnostics({
-            inputs: [
-              { optionName: "--before", value: options.before, allowImplicitStdin: false },
-              { optionName: "--after", value: options.after, allowImplicitStdin: false }
-            ],
-            output: options.out
-          }),
-          warnings: summary.warnings,
-          changes_summary: summary.changes_summary
-        })
-        : []
+      diagnostics: buildResultDiagnostics("state diff", diagnosticsFormat, {
+        io: buildIoDiagnostics({
+          inputs: [
+            { optionName: "--before", value: options.before, allowImplicitStdin: false },
+            { optionName: "--after", value: options.after, allowImplicitStdin: false }
+          ],
+          output: options.out
+        }),
+        warnings: summary.warnings,
+        comparison_complete: summary.comparison_complete,
+        changes_summary: summary.changes_summary
+      })
     };
   }
 
@@ -118,25 +115,27 @@ export async function runStateCommand(command, options, api) {
     ensureWorkbookJson(api, stateDocument, "state apply-patch");
     ensureKind(api, patchDocument, "patch_json", "state apply-patch");
 
-    const baseModel = api.workbookJson.importAsProjectModel(stateDocument).model;
+    const imported = api.workbookJson.importAsProjectModel(stateDocument);
+    const baseModel = imported.model;
     const patched = api.importExternal({
       source: { format: "patch_json", document: patchDocument },
       mode: "patch",
       baseModel
     });
     const workbookDocument = api.workbookJson.exportDocument(patched.model);
+    const resultWithWarnings = { ...patched, warnings: [...(imported.warnings || []), ...(patched.warnings || [])] };
     const diagnosticsFormat = parseDiagnosticsFormat(options.diagnostics);
     return {
       output: `${JSON.stringify(workbookDocument, null, 2)}\n`,
       diagnostics: diagnosticsFormat === "json"
-        ? buildPatchDiagnosticsJson(patched, "apply-patch", buildIoDiagnostics({
+        ? buildPatchDiagnosticsJson(resultWithWarnings, "apply-patch", buildIoDiagnostics({
           inputs: [
             { optionName: "--state", value: options.state, allowImplicitStdin: false },
             { optionName: "--in", value: options.in, allowImplicitStdin: true }
           ],
           output: options.out
         }))
-        : buildPatchDiagnosticsText(patched, "apply-patch")
+        : buildPatchDiagnosticsText(resultWithWarnings, "apply-patch")
     };
   }
 
@@ -166,6 +165,7 @@ function buildStateSummary(api, model) {
 function buildStateDiffSummary(result) {
   return {
     kind: "state_diff_summary",
+    comparison_complete: result.comparison_complete,
     warnings: result.warnings || [],
     changes_summary: summarizeChanges(result.changes || []),
     changed_items: buildChangedItems(result.changes || [])

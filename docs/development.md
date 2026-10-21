@@ -32,7 +32,18 @@ npm test
 - `npm run test:full`: `fast` にCLI統合testとbrowser runtime contractを加えた完全回帰。
 - `npm test` / `npm run test:all`: 現在は `full` と同じ全checked-in test fileを実行する、CI向けの安定した完全suite alias。
 
+## v1 開発における互換性と回帰防止
+
+`v1.0.0` からのゼロベース再設計は、既存の利用者向け機能を退行させずに v1 workflow を追加する。実装とレビューでは次を守る。
+
+- 既存 CLI の command surface、exit code、標準入出力、diagnostics、既存ファイルへの出力を変更しない。これらは `tests/mikuproject-cli-compatibility-contract.test.js` で検証する。
+- 新しい v1 workflow は、legacy CLI の実装を置換するのではなく、v1 専用の router / contract / test として追加する。既存の機能を変更する必要がある場合も、先に互換性への影響を確認する。
+- 通常の変更では `npm run test:fast` を実行する。CLI統合、browser runtime、runtime artifact、または既存 I/O に触れる変更では、`npm test` による完全回帰を実行する。
+- 意図した非互換変更は例外として扱う。変更理由、利用者への影響、移行方法、更新する contract と test を同じ変更に明記し、互換性の破棄を暗黙に混在させない。
+
 Web UI development, browser/UI tests, single-file HTML build, and offline browser verification are maintained in [miku-project-web](https://github.com/igapyon/miku-project-web).
+
+CLIの2026-10-21 review修正では、未知optionの明示的拒否、import warningの伝達、出力失敗時の単一JSON診断、workbook全量diff、v1 control helpを扱う。従来無視されたoptionの拒否とdiff結果の拡張は、理由・移行方法・回帰条件を[修正計画](cli-command-review-fix-plan-v20261021.md#compatibility-and-migration)に明記した意図的な契約修正である。
 
 ## local-data
 

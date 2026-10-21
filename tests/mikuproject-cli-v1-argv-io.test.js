@@ -12,7 +12,7 @@ import {
 } from "../scripts/lib/v1/cli-v1-argv.mjs";
 import { isCliV1Error } from "../scripts/lib/v1/cli-v1-errors.mjs";
 import { reserveV1ResultTransport } from "../scripts/lib/v1/cli-v1-io.mjs";
-import { prepareV1WorkflowInvocation, recognizesV1Workflow } from "../scripts/lib/v1/cli-v1-router.mjs";
+import { prepareV1WorkflowInvocation, recognizesV1Workflow, runV1VersionedRuntime } from "../scripts/lib/v1/cli-v1-router.mjs";
 import {
   createUnverifiedRuntimeBinding,
   createV1ErrorResult,
@@ -89,6 +89,20 @@ describe("v1 argv grammar", () => {
     expectError(["apply-change", "--project", "-", "--request", "-", "--plan-result", "plan.json", "--approval", "approval.json"], "cli.multiple-stdin-sources");
     expectError(["verify-artifact", "--artifact-set", "-"], "cli.invalid-option-value");
     expectError(["validate", "--project", "\0"], "cli.invalid-option-value");
+  });
+
+  it("executes control operations without accessing runtime assets or domain files", async () => {
+    for (const args of [["--help"], ["--version"], ["inspect", "--help"], ["apply-change", "--help"]]) {
+      let output = "";
+      const forbiddenAccess = () => { throw new Error("control must not access the filesystem"); };
+      const result = await runV1VersionedRuntime(args, {
+        runtimeVersion: "1.2.3",
+        stdout: { write(chunk) { output += chunk; } },
+        fileSystem: { readFile: forbiddenAccess, lstat: forbiddenAccess, realpath: forbiddenAccess }
+      });
+      expect(result.exit_code).toBe(0);
+      expect(output).toContain(args[0] === "--version" ? "miku-project 1.2.3\n" : "Usage:");
+    }
   });
 });
 
