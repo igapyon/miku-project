@@ -363,7 +363,18 @@ first cut の粒度は要約に留める。
 - dependencies added / removed
 - assignments added / updated / deleted
 
-最初から完全 diff を目指さない。
+workbookの既知schemaを比較対象とし、未知schemaの情報がある場合は比較の不完全さを明示する。
+
+実装上の比較契約（2026-10-21修正）:
+
+- `state diff` はworkbook文書の既知列を直接比較する。部分更新用importの反映可能列に限定しない。
+- ProjectはField、Tasks / Resources / Assignments / CalendarsはUID、NonWorkingDaysはCalendarUIDとIndexで対応づける。行の追加・削除と、既存Tasksの順序変更を検出する。
+- 既存のsummary fieldに加え、`comparison_complete`を返す。未知のsheet・列・Project fieldがある場合はfalseと警告を返し、既知列に差分がなくてもnoop扱いにしない。
+- `changed_items`の各項目には`change_type`、`sheet`、`row_key`を追加する。`field-updated`は通常の列差分、`row-added` / `row-removed`は`field = "$row"`と行snapshot / null、`order-changed`は`field = "$position"`と生存タスク間の位置を返す。行追加・削除には`before_position` / `after_position`も付く。
+- 欠落cellとnullは同じとし、0・false・空文字列は区別する。重複または欠落した行識別子は比較エラーとする。
+- 既存stateの限定編集反映には引き続きmerge importを使う。全量比較の変更をmerge importへ持ち込まない。
+
+修正方針、受入条件、互換性への影響は[CLI command review fixes](cli-command-review-fix-plan-v20261021.md)を参照する。
 
 ## Diagnostics
 

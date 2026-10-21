@@ -21,6 +21,11 @@
 
   const mikuprojectProjectWorkbookJson = (globalThis as typeof globalThis & {
     __mikuprojectProjectWorkbookJson?: {
+      diffProjectWorkbookJson: (before: unknown, after: unknown) => {
+        changes: unknown[];
+        warnings: Array<{ message: string }>;
+        comparison_complete: boolean;
+      };
       exportProjectWorkbookJson: (model: ProjectModel) => unknown;
       importProjectWorkbookJsonAsProjectModel: (documentLike: unknown) => {
         model: ProjectModel;
@@ -71,6 +76,7 @@
   (globalThis as typeof globalThis & {
     __mikuprojectCoreApiWorkbook?: {
       workbookJson: {
+        diffDocuments: typeof mikuprojectProjectWorkbookJson.diffProjectWorkbookJson;
         exportDocument: typeof mikuprojectProjectWorkbookJson.exportProjectWorkbookJson;
         validateDocument: typeof mikuprojectProjectWorkbookJson.validateWorkbookJsonDocument;
         importAsProjectModel: typeof mikuprojectProjectWorkbookJson.importProjectWorkbookJsonAsProjectModel;
@@ -84,6 +90,7 @@
     };
   }).__mikuprojectCoreApiWorkbook = {
     workbookJson: {
+      diffDocuments: mikuprojectProjectWorkbookJson.diffProjectWorkbookJson,
       exportDocument: mikuprojectProjectWorkbookJson.exportProjectWorkbookJson,
       validateDocument: mikuprojectProjectWorkbookJson.validateWorkbookJsonDocument,
       importAsProjectModel: mikuprojectProjectWorkbookJson.importProjectWorkbookJsonAsProjectModel,

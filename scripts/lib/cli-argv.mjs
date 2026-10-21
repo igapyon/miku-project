@@ -2,7 +2,7 @@ import { CliUsageError } from "./cli-errors.mjs";
 
 export function parseArgs(argv) {
   const command = [];
-  const options = {};
+  const options = Object.create(null);
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];

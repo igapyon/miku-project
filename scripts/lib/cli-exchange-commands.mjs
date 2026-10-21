@@ -7,7 +7,7 @@ import {
   readBinaryInput,
   readTextInput
 } from "./cli-io.mjs";
-import { buildCommandDiagnostics, parseDiagnosticsFormat } from "./cli-diagnostics.mjs";
+import { buildResultDiagnostics, parseDiagnosticsFormat } from "./cli-diagnostics.mjs";
 import { ensureWorkbookJson, parsePlainJson } from "./cli-command-utils.mjs";
 
 export async function runExchangeCommand(command, options, api) {
@@ -21,40 +21,38 @@ export async function runExchangeCommand(command, options, api) {
     if (action === "workbook-json") {
       const stateDocument = parsePlainJson(await readTextInput(options.in), "export workbook-json");
       ensureWorkbookJson(api, stateDocument, "export workbook-json");
-      const model = api.workbookJson.importAsProjectModel(stateDocument).model;
+      const { model, warnings } = api.workbookJson.importAsProjectModel(stateDocument);
       const exported = api.workbookJson.exportDocument(model);
       return {
         output: `${JSON.stringify(exported, null, 2)}\n`,
-        diagnostics: diagnosticsFormat === "json"
-          ? buildCommandDiagnostics("export workbook-json", {
-            io: buildIoDiagnostics({
-              inputs: [{ optionName: "--in", value: options.in, allowImplicitStdin: true }],
-              output: options.out
-            }),
-            output_kind: "workbook_json",
-            sheet_count: Object.keys(exported.sheets || {}).length
-          })
-          : []
+        diagnostics: buildResultDiagnostics("export workbook-json", diagnosticsFormat, {
+          warnings,
+          io: buildIoDiagnostics({
+            inputs: [{ optionName: "--in", value: options.in, allowImplicitStdin: true }],
+            output: options.out
+          }),
+          output_kind: "workbook_json",
+          sheet_count: Object.keys(exported.sheets || {}).length
+        })
       };
     }
 
     if (action === "xml") {
       const stateDocument = parsePlainJson(await readTextInput(options.in), "export xml");
       ensureWorkbookJson(api, stateDocument, "export xml");
-      const model = api.workbookJson.importAsProjectModel(stateDocument).model;
+      const { model, warnings } = api.workbookJson.importAsProjectModel(stateDocument);
       const output = `${api.msProject.exportToXml(model)}\n`;
       return {
         output,
-        diagnostics: diagnosticsFormat === "json"
-          ? buildCommandDiagnostics("export xml", {
-            io: buildIoDiagnostics({
-              inputs: [{ optionName: "--in", value: options.in, allowImplicitStdin: true }],
-              output: options.out
-            }),
-            output_kind: "ms_project_xml",
-            output_length: output.length
-          })
-          : []
+        diagnostics: buildResultDiagnostics("export xml", diagnosticsFormat, {
+          warnings,
+          io: buildIoDiagnostics({
+            inputs: [{ optionName: "--in", value: options.in, allowImplicitStdin: true }],
+            output: options.out
+          }),
+          output_kind: "ms_project_xml",
+          output_length: output.length
+        })
       };
     }
 
@@ -62,22 +60,21 @@ export async function runExchangeCommand(command, options, api) {
       ensureBinaryOutputTarget(options, "export xlsx");
       const stateDocument = parsePlainJson(await readTextInput(options.in), "export xlsx");
       ensureWorkbookJson(api, stateDocument, "export xlsx");
-      const model = api.workbookJson.importAsProjectModel(stateDocument).model;
+      const { model, warnings } = api.workbookJson.importAsProjectModel(stateDocument);
       const workbook = api.xlsx.exportWorkbook(model);
       const output = api.xlsx.encodeWorkbook(workbook);
       return {
         output,
-        diagnostics: diagnosticsFormat === "json"
-          ? buildCommandDiagnostics("export xlsx", {
-            io: buildIoDiagnostics({
-              inputs: [{ optionName: "--in", value: options.in, allowImplicitStdin: true }],
-              output: options.out,
-              outputBase64: options["out-base64"]
-            }),
-            output_kind: "xlsx",
-            byte_length: output.length
-          })
-          : []
+        diagnostics: buildResultDiagnostics("export xlsx", diagnosticsFormat, {
+          warnings,
+          io: buildIoDiagnostics({
+            inputs: [{ optionName: "--in", value: options.in, allowImplicitStdin: true }],
+            output: options.out,
+            outputBase64: options["out-base64"]
+          }),
+          output_kind: "xlsx",
+          byte_length: output.length
+        })
       };
     }
     return undefined;
@@ -95,18 +92,17 @@ export async function runExchangeCommand(command, options, api) {
       const workbookDocument = api.workbookJson.exportDocument(imported.model);
       return {
         output: `${JSON.stringify(workbookDocument, null, 2)}\n`,
-        diagnostics: diagnosticsFormat === "json"
-          ? buildCommandDiagnostics("import xlsx", {
-            io: buildIoDiagnostics({
-              inputs: [describeBinaryInputForDiagnostics(options)],
-              output: options.out
-            }),
-            input_kind: "xlsx",
-            output_kind: "workbook_json",
-            byte_length: sourceBytes.length,
-            sheet_count: Object.keys(workbookDocument.sheets || {}).length
-          })
-          : []
+        diagnostics: buildResultDiagnostics("import xlsx", diagnosticsFormat, {
+          warnings: imported.warnings || [],
+          io: buildIoDiagnostics({
+            inputs: [describeBinaryInputForDiagnostics(options)],
+            output: options.out
+          }),
+          input_kind: "xlsx",
+          output_kind: "workbook_json",
+          byte_length: sourceBytes.length,
+          sheet_count: Object.keys(workbookDocument.sheets || {}).length
+        })
       };
     }
   }

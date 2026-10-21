@@ -10,9 +10,12 @@ import { detectRequestedDiagnosticsFormat, parseArgs } from "./lib/cli-argv.mjs"
 import { writeOutput } from "./lib/cli-io.mjs";
 import { buildErrorDiagnostics, writeDiagnostics } from "./lib/cli-diagnostics.mjs";
 import { writeHelp } from "./lib/cli-presentation.mjs";
+import { validateLegacyInvocation } from "./lib/cli-command-specs.mjs";
 import { runLegacyCommand } from "./lib/cli-legacy-router.mjs";
 import {
   recognizesV1Workflow,
+  recognizesV1Control,
+  runV1Control,
   rejectUnreleasedV1Workflow,
   runV1VersionedRuntime
 } from "./lib/v1/cli-v1-router.mjs";
@@ -23,8 +26,14 @@ const repoRoot = path.resolve(__dirname, "..");
 
 async function main() {
   const rawArgv = process.argv.slice(2);
+  const isVersionedV1Runtime = typeof BUNDLED_V1_RUNTIME_VERSION === "string" && BUNDLED_V1_RUNTIME_VERSION.length > 0;
+  if (recognizesV1Control(rawArgv) && (isVersionedV1Runtime || recognizesV1Workflow(rawArgv))) {
+    const result = runV1Control(rawArgv, { version: getCliVersion(), stdout: process.stdout });
+    process.exitCode = result.exit_code;
+    return;
+  }
   if (recognizesV1Workflow(rawArgv)) {
-    if (typeof BUNDLED_V1_RUNTIME_VERSION === "string" && BUNDLED_V1_RUNTIME_VERSION.length > 0) {
+    if (isVersionedV1Runtime) {
       const result = await runV1VersionedRuntime(rawArgv, {
         entryPath: __filename,
         runtimeVersion: BUNDLED_V1_RUNTIME_VERSION,
@@ -54,15 +63,16 @@ async function main() {
     return;
   }
 
+  validateLegacyInvocation(command, options);
   const loaded = loadMikuprojectCoreApi({ rootDir: repoRoot });
   try {
     const result = await runLegacyCommand(command, options, loaded.api);
+    writeOutput(result.output, options);
     if (Array.isArray(result.diagnostics) && result.diagnostics.length > 0) {
       writeDiagnostics(process.stderr, result.diagnostics);
     } else if (result.diagnostics && !Array.isArray(result.diagnostics)) {
       writeDiagnostics(process.stderr, result.diagnostics);
     }
-    writeOutput(result.output, options);
     if (typeof result.exitCode === "number") {
       process.exitCode = result.exitCode;
     }

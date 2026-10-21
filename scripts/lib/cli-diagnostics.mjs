@@ -114,6 +114,13 @@ export function buildCommandDiagnostics(context, extra = {}) {
   };
 }
 
+export function buildResultDiagnostics(context, diagnosticsFormat, extra = {}) {
+  if (diagnosticsFormat === "json") {
+    return buildCommandDiagnostics(context, extra);
+  }
+  return (extra.warnings || []).map((warning) => `[warning] ${formatWarning(warning)}`);
+}
+
 export function determineExitCodeFromStatus(status) {
   if (status === "error") {
     return 1;
@@ -152,7 +159,13 @@ export function buildChangedItems(changes) {
       label: change.label,
       field: change.field,
       before: change.before,
-      after: change.after
+      after: change.after,
+      ...(change.change_type ? { change_type: change.change_type } : {}),
+      ...(change.sheet ? { sheet: change.sheet } : {}),
+      ...(change.row_key ? { row_key: change.row_key } : {}),
+      ...(change.change_type === "row-added" || change.change_type === "row-removed"
+        ? { before_position: change.before_position, after_position: change.after_position }
+        : {})
     });
   }
 

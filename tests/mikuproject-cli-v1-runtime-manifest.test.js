@@ -50,6 +50,29 @@ afterEach(() => {
 });
 
 describe("v1 versioned Node runtime manifest binding", () => {
+  it("provides v1 root and command help in a standalone bundle without workflow inputs", () => {
+    const directory = createTemporaryDirectory("miku-project-v1-runtime-control-");
+    const built = buildRuntime(directory, "runtime");
+    // Metadata remains available when the workflow runtime cannot be verified.
+    // It must not disguise a workflow failure as a successful operation.
+    rmSync(built.manifestPath);
+    const version = runRuntime(built.runtimeDirectory, ["--version"], { cwd: directory });
+    expect(version.status).toBe(0);
+    expect(version.stdout).toBe(`miku-project ${runtimeVersion}\n`);
+    expect(version.stderr).toBe("");
+    const help = runRuntime(built.runtimeDirectory, ["--help"], { cwd: directory });
+    expect(help.status).toBe(0);
+    expect(help.stderr).toBe("");
+    for (const command of ["inspect", "validate", "plan-change", "apply-change", "verify-artifact"]) {
+      expect(help.stdout).toContain(`miku-project ${command}`);
+      const commandHelp = runRuntime(built.runtimeDirectory, [command, "--help"], { cwd: directory });
+      expect(commandHelp.status).toBe(0);
+      expect(commandHelp.stderr).toBe("");
+      expect(commandHelp.stdout).toContain(`miku-project ${command}`);
+    }
+    expect(runRuntime(built.runtimeDirectory, ["validate", "--project", "missing.xml"], { cwd: directory }).status).toBe(3);
+  }, 30000);
+
   it("refuses a dirty or non-exact-tagged release source before making a runtime directory", () => {
     const directory = createTemporaryDirectory("miku-project-v1-runtime-release-preflight-");
     const dirtyRoot = createMiniGitRoot(directory, "dirty", { tag: sourceTag, dirty: true });

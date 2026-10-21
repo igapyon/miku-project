@@ -35,6 +35,8 @@ export function writeHelp(stream) {
     "  Text and JSON commands write their primary result to stdout unless --out <path> is supplied.",
     "  Where the Usage form permits it, --in - or an omitted text input reads UTF-8 text from stdin.",
     "  --diagnostics defaults to text. Use --diagnostics json for structured diagnostics on stderr.",
+    "  Unknown commands and unknown or inapplicable options fail before domain input is read.",
+    "  Import warnings are preserved on stderr; state diff reports comparison_complete with structural changes.",
     "",
     "Inputs:",
     "  File paths resolve from the current working directory. Use - only where the Usage form allows stdin.",

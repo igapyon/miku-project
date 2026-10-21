@@ -1,6 +1,7 @@
 import path from "node:path";
 
-import { isV1WorkflowCommand, parseV1Invocation } from "./cli-v1-argv.mjs";
+import { isV1ControlInvocation, isV1WorkflowCommand, parseV1Invocation } from "./cli-v1-argv.mjs";
+import { writeV1Control } from "./cli-v1-presentation.mjs";
 import { runV1ApplyChange } from "./cli-v1-apply.mjs";
 import { createV1RuntimeError, isCliV1Error } from "./cli-v1-errors.mjs";
 import { reserveV1ResultTransport } from "./cli-v1-io.mjs";
@@ -15,6 +16,16 @@ import { runV1VerifyArtifact } from "./cli-v1-verify-artifact.mjs";
  */
 export function recognizesV1Workflow(argv) {
   return Array.isArray(argv) && isV1WorkflowCommand(argv[0]);
+}
+
+export function recognizesV1Control(argv) {
+  return isV1ControlInvocation(argv);
+}
+
+export function runV1Control(argv, { version, stdout = process.stdout } = {}) {
+  const invocation = parseV1Invocation(argv);
+  if (invocation.kind !== "control") throw new TypeError("A v1 control invocation is required");
+  return writeV1Control(invocation, { version, stdout });
 }
 
 export async function prepareV1WorkflowInvocation(argv, options = {}) {
@@ -118,6 +129,9 @@ export async function runV1VersionedRuntime(argv, {
   stdout = process.stdout,
   fileSystem
 } = {}) {
+  if (recognizesV1Control(argv)) {
+    return runV1Control(argv, { version: runtimeVersion ?? productVersion, stdout });
+  }
   let parsedInvocation = null;
   try {
     parsedInvocation = parseV1Invocation(argv);

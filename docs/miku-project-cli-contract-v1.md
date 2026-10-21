@@ -142,6 +142,8 @@ miku-project verify-artifact
 
 `--help`、`--version`、`<command> --help`はcontrol operationである。`--version`は`miku-project <runtime-version>`とLF一件、helpはUTF-8 textをstdoutへ返し、project inputやresult fileを必要としない。machine-readableなversion/capability判断にはこれらの文言ではなくruntime manifestを使う。
 
+control operationはruntime assetの検証も必要としない。help/versionの文言はruntime integrityの証明ではない。workflow commandのmanifest検証とsource/development CLIのfail-closed境界は引き続き適用する。
+
 ## result transport
 
 五つのworkflow commandは、成功・validation rejection・usage error・runtime errorを問わず、原則としてversioned `miku_project_cli_result/v1` JSON documentを一件だけ返す。result schema、diagnostics field、statusとexit codeは [CLI result and diagnostics contract v1](miku-project-cli-result-contract-v1.md) に定め、transportは次で固定する。

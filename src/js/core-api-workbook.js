@@ -17,6 +17,7 @@
     }
     globalThis.__mikuprojectCoreApiWorkbook = {
         workbookJson: {
+            diffDocuments: mikuprojectProjectWorkbookJson.diffProjectWorkbookJson,
             exportDocument: mikuprojectProjectWorkbookJson.exportProjectWorkbookJson,
             validateDocument: mikuprojectProjectWorkbookJson.validateWorkbookJsonDocument,
             importAsProjectModel: mikuprojectProjectWorkbookJson.importProjectWorkbookJsonAsProjectModel,
