@@ -2,6 +2,30 @@
 
 この文書には、現在着手可能な未完了作業と、再評価待ちの既存backlogだけを書く。新しい製品像は `docs/miku-project-zero-base-spec-v20260809.md`、詳細な順序と完了条件は `docs/miku-project-zero-base-implementation-plan-v20260810.md`、現行実装の仕様は `docs/spec.md` を参照する。
 
+## Node / Java 機能差分の判断（#137）
+
+[再自己レビュー5指摘の追加対応計画（Luna実行用）](node-java-work-plan-v20261022/self-review-followup-plan.md)に従いR2F-00〜07を完了した。結果と人の判断待ち・将来候補は共有記録を参照する。
+
+[自己レビュー4指摘の修正計画（Luna実行用）](node-java-work-plan-v20261022/self-review-fix-plan.md)に基づき、ユーザー許可を受けRPF-00〜09を完了。5指摘を再確認するR2F-00〜07も実施済み。結果は[共有確認結果](node-java-137-review-evidence-v20261022.md#r2f-00)に記録した。I137でdepth上限100をNode/Java CLIとMCPに実装し、Java F-J6を部分対応した。F-S5/F-S6は未決定のまま維持する。
+
+[機能・差分判断表](node-java-feature-union-v20261022.md)を現在の比較入口とする。共有legacy 22command、Java固有7command、control / I/O / core / 新v1 / 配布の差を記録し、実装検討・差異維持・仕様判断を区別した。これはソースと既存根拠の照合であり、全runtimeの実行同等性を確認済みという意味ではない。
+
+[Luna用作業分解](node-java-work-plan-v20261022/README.md)に各候補の依存・判断待ち・完了条件・確認方法を記録している。元の75カードはPRE-01/02、LEG-N01、LEG-J01〜J17、DEC-02、DEC-04〜10、KEEP-01〜05、REF-01、END-01〜03の37件が完了、2件が人の判断待ち、36件が未着手。補充18カードはREM-01〜04、REM-06〜12、REM-15〜18が完了、REM-05は未再現で保留、REM-13〜14は採択待ち。F-J5 implementationはJava HEAD `c0b4421`に含まれ、RPF-03とI137の追加変更は未commit。詳細は[採択判断パケット](node-java-137-adoption-packet-v20261022.md)と[残作業計画](node-java-work-plan-v20261022/remaining-work.md)。
+
+- [x] `F-N1` LEG-N01で4commandのhelpへ許可済み`--out`を掲載。focused 33 testsとEND-02 full build/test 361 tests成功。B13 metadataは不変
+- [x] `F-J1/F-J2` LEG-J01〜J17のfocused回帰と共有CLI比較を完了。自己レビューでoption値欠落、validate-patch reportの境界を補正。I137でCLI depth 0〜100（省略は無制限）をNode/Java/MCPへ実装。Node 20 opt-inの34/34は履歴。Current I137: Node 374 tests、Java 238 tests / 0 failure / 0 error / 14 opt-in skips、MCP focused 3/3。MCP full buildは既存dirty `createServer.ts`型エラーで停止
+- [x] `F-J3` KEEP-01〜05でJava extension、native schema、report fallback/warning、配布境界の維持根拠を追跡文書へ接続
+- [x] `F-J5` B25: Java XLSX importのTask共通列をheader名でmappingし、Java native列を保持。implementationはJava HEAD `c0b4421`。Historical focused 22/22・Node 20 parity 9/9・Maven 225 tests、RPF-08 J-ALL 229 tests・snapshot verifier 8/8。Current R2F-06: importer 12/12・Maven 229 tests・snapshot verifier 8/8。Node 20 parity 9/9はRPF-08の過去run。
+- [ ] `F-J6` B26: Java `update_task` dispatchと11 fieldを実装。`percent_complete` / `percent_work_complete`はMS Project XMLに合わせてNode/Java双方で整数0〜100とし、小数・範囲外は警告して維持。Java space datetime parser差は残件。F-S5 projectionとは独立
+- [ ] `F-S1/F-S2/F-S3/F-S4` legacy help位置・親directory作成、Java帳票調整option、XML/modelのfield・loss境界、凍結I/O metadataのJava側扱いの提案は記録済み。各Gateの人による採択待ち
+- [ ] `F-X1` REF-01でexact `v1.1.1` / `9a9f562c03d28f1b0f3c809226dc61d0cd9d5f7e`を候補として記録済み。G-REFERENCE採択後に新しいinternal runtime lockとJava snapshotを追加する。旧v1.0.3とG4 lockは保持する
+- [x] END-03: F-X1、REF-03、F-J4の後続草案を確認。F-J5草案はローカル実装・検証済み状態へ更新し、Java #43等との重複を確認。GitHubには登録していない
+- [x] END-03: 固定reader修復後、#137本文・commentsを取得（OPEN、comments 0）。調査結果のpaste-ready comment draftを保存。GitHubへ投稿していない
+
+DEC-10でlegacy XML fieldの五domain全てを棚卸しし、G-XMLに必要なfield別採択を記録した。DEC-05〜10は調査完了だが、採択前にAPPLY-05を開始しない。追加発見B23/F-S5、B24/F-S6、B25/F-J5、B26/F-J6は元の75カード外。F-J5 implementation is committed in Java HEAD `c0b4421`; RPF-03 public test additions and I137 changes remain uncommitted. F-S5/F-S6の選択肢は採択判断パケットへまとめたまま判断待ち。depth上限100は決定・実装済み。
+
+[残作業の実行計画](node-java-work-plan-v20261022/remaining-work.md)の独立作業は実行済み。Node 26のWBS XLSX focused caseは2回未再現で、原因は未確定・REM-05保留。F-S5/F-S6/depthの採択資料は完成したが、判断は未決定。APPLY / REF / V1の後続は既存カードと実際の採択記録を使う。
+
 ## ゼロベース再設計: G0 完了
 
 - [x] `ZB-P0.1` 新仕様、実施計画、TODO、現行仕様、worklogの文書authorityを確認する

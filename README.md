@@ -194,6 +194,8 @@ miku-project report mermaid --in workbook.json --out project.mmd
 `report monthly-calendar-svg` は月別 SVG 一式をまとめた ZIP を出力する。
 `report all` は `wbs.xlsx` / `wbs.md` / `mermaid.mmd` / `daily.svg` / `weekly.svg` / `monthly-calendar/YYYY-MM.svg` をまとめた ZIP を出力する。
 
+`ai export phase-detail --max-depth` は選択したrootからの相対depthを0〜100の整数で指定する。省略時は従来どおり選択root以下を深さ制限なしで出力する。
+
 ## Browser runtime artifact
 
 `miku-project-web` などの browser downstream が build 時に取り込む importable runtime を生成できる。
@@ -249,6 +251,9 @@ npm run verify:cli-v1-release-candidate -- \
 
 ## 関連ドキュメント
 
+- [Node / Java 機能・差分判断表（#137）](docs/node-java-feature-union-v20261022.md)
+- [Node / Java 差分対応の作業分解（Luna用）](docs/node-java-work-plan-v20261022/README.md)
+- [#137 採択判断パケット](docs/node-java-137-adoption-packet-v20261022.md)
 - [docs/miku-project-zero-base-spec-v20260809.md](docs/miku-project-zero-base-spec-v20260809.md)
 - [docs/miku-project-zero-base-implementation-plan-v20260810.md](docs/miku-project-zero-base-implementation-plan-v20260810.md)
 - [docs/miku-project-semantic-contract-v1.md](docs/miku-project-semantic-contract-v1.md)

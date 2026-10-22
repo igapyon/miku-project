@@ -44,6 +44,20 @@ beforeAll(() => {
 afterAll(() => fs.rmSync(directory, { recursive: true, force: true }));
 
 describe("reviewed CLI failure paths", () => {
+  it("shows the allowed --out option in all affected legacy usage lines", () => {
+    const result = run(["--help"]);
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    for (const usage of [
+      "miku-project ai spec [--out spec.md|-]",
+      "miku-project ai detect-kind [--in document.json|-] [--diagnostics text|json] [--out kind.txt|-]",
+      "miku-project ai validate-patch --state workbook.json [--in patch.json] [--diagnostics text|json] [--out report.json|-]",
+      "miku-project state diff --before workbook.before.json --after workbook.after.json [--diagnostics text|json] [--out diff.json|-]"
+    ]) {
+      expect(result.stdout).toContain(usage);
+    }
+  });
+
   it.each(["added", "removed"])("reports a task %s as a real diff", (kind) => {
     const after = structuredClone(state);
     if (kind === "added") after.sheets.Tasks.push({ ...after.sheets.Tasks.at(-1), UID: "900", Name: "New task" });
@@ -85,6 +99,71 @@ describe("reviewed CLI failure paths", () => {
     const result = run(["state", "summarize", "--in", input, "--diagnostics", "text", "--diagnostics", "json"]);
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stderr).ok).toBe(true);
+  });
+
+  it("limits phase-detail --max-depth to 100 without changing the omitted default", () => {
+    const deepState = structuredClone(state);
+    const taskRows = deepState.sheets.Tasks;
+    const root = taskRows.find((task) => task.UID === "2");
+    const sibling = taskRows.find((task) => task.UID === "3");
+    const descendants = Array.from({ length: 101 }, (_, index) => ({
+      ...root,
+      UID: String(index + 4),
+      ID: index + 4,
+      Name: `Child ${index + 1}`,
+      OutlineLevel: index + 3,
+      OutlineNumber: `1.${"1.".repeat(index + 1)}${index + 1}`,
+      WBS: `1.${"1.".repeat(index + 1)}${index + 1}`
+    }));
+    const deepInput = write("phase-detail-depth.json", {
+      ...deepState,
+      sheets: {
+        ...deepState.sheets,
+        Tasks: [taskRows[0], root, ...descendants, sibling]
+      }
+    });
+
+    const readUids = (maxDepth, name) => {
+      const output = path.join(directory, name);
+      const args = ["ai", "export", "phase-detail", "--in", deepInput, "--phase-uid", "1", "--root-task-uid", "2"];
+      if (maxDepth !== undefined) args.push("--max-depth", maxDepth);
+      args.push("--out", output, "--diagnostics", "json");
+      const result = run(args);
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stdout).toBe("");
+      const projection = JSON.parse(fs.readFileSync(output, "utf8"));
+      return projection.tasks.map((task) => task.uid);
+    };
+
+    expect(readUids(undefined, "phase-depth-unlimited.json")).toHaveLength(102);
+    expect(readUids("0", "phase-depth-0.json")).toEqual(["2"]);
+    expect(readUids("1", "phase-depth-1.json")).toEqual(["2", "4"]);
+    expect(readUids("100", "phase-depth-100.json")).toHaveLength(101);
+    expect(readUids("000", "phase-depth-zero-padded.json")).toEqual(["2"]);
+    expect(readUids(`0${"0".repeat(200)}100`, "phase-depth-long-zero-prefix.json")).toHaveLength(101);
+  });
+
+  it.each([
+    "101", "2147483647", "2147483648", "9007199254740991", "9007199254740992",
+    "9".repeat(200), "-1", "1.5", "1e2", "+1", " 1 ", "abc"
+  ])("rejects invalid phase-detail --max-depth %s as usage error before output", (value) => {
+    const output = path.join(directory, "phase-depth-invalid.json");
+    fs.writeFileSync(output, "sentinel\n");
+    const original = fs.readFileSync(output, "utf8");
+    const result = run([
+      "ai", "export", "phase-detail", "--in", input, "--phase-uid", "1", "--root-task-uid", "2",
+      "--max-depth", value, "--out", output, "--diagnostics", "json"
+    ]);
+    expect(result.status).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(JSON.parse(result.stderr)).toMatchObject({
+      error_code: "invalid_integer_option",
+      error_details: {
+        option: "--max-depth",
+        expected: "integer_between_0_and_100"
+      }
+    });
+    expect(fs.readFileSync(output, "utf8")).toBe(original);
   });
 
   it.each([

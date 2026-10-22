@@ -82,6 +82,7 @@
 `phase_detail_view` は、安全な変更候補の抽出や、次に必要な `task_edit_view` の特定にも使えます。
 `phase_detail_view` には、phase 全体をそのまま渡す `full` モードと、対象を絞る `scoped` モードの両方がありえます。
 必要に応じて、`root_uid` と `max_depth` で対象範囲を絞って渡してよいです。
+CLI の `--max-depth` は選択rootを0とする相対depthで、整数0〜100を受け付けます。省略時は既存の無制限動作を保ちます。
 既存 project では、projection JSON は Web UI から保存しても、CLI から取得してもかまいません。
 repo には `scripts/cli-ai-workflow-example.mjs` と `scripts/cli-ai-stdio-example.mjs` があり、file-based / stdio-based の両方の最小 CLI 連携例を参照できます。
 
@@ -474,7 +475,7 @@ JSON parse failure では、`error_code=invalid_json_input` と `error_details.c
 - `update_task.notes` で task の `Notes` を更新できます。空文字を返した場合は `Notes` をクリアします
 - `update_task.calendar_uid` で task の `CalendarUID` を更新できます。空文字を返した場合は task 個別の calendar 指定をクリアします
 - `update_task.calendar_uid` は既存 calendar UID を指す必要があります。未知 UID は warning で無視されます
-- `update_task.percent_complete` / `percent_work_complete` は `0..100` の数値で返してください
+- `update_task.percent_complete` / `percent_work_complete` は MS Project XML の整数型に合わせ、`0..100` の整数で返してください。小数・範囲外・数値以外は warning で無視されます
 - `update_task.critical` は boolean で返してください
 - ただし `update_task` では summary task を milestone 化してはいけません
 - `update_task.is_milestone=true` の場合は `planned_finish = planned_start`、`planned_duration = 0` へ正規化されます
