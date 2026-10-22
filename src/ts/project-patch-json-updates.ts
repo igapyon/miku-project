@@ -114,8 +114,8 @@
 
     if (fields.percent_complete !== undefined) {
       handledFields.add("percent_complete");
-      if (typeof fields.percent_complete !== "number" || !Number.isFinite(fields.percent_complete) || fields.percent_complete < 0 || fields.percent_complete > 100) {
-        warnings.push({ message: `update_task.percent_complete は 0 以上 100 以下の数値が必要です: ${task.uid}`, scope: "tasks", uid: task.uid, label: task.name || task.uid });
+      if (typeof fields.percent_complete !== "number" || !Number.isInteger(fields.percent_complete) || fields.percent_complete < 0 || fields.percent_complete > 100) {
+        warnings.push({ message: `update_task.percent_complete は 0 以上 100 以下の整数が必要です: ${task.uid}`, scope: "tasks", uid: task.uid, label: task.name || task.uid });
       } else if (task.percentComplete !== fields.percent_complete) {
         changes.push({ scope: "tasks", uid: task.uid, label: task.name || task.uid, field: "percentComplete", before: task.percentComplete, after: fields.percent_complete });
         task.percentComplete = fields.percent_complete;
@@ -124,8 +124,8 @@
 
     if (fields.percent_work_complete !== undefined) {
       handledFields.add("percent_work_complete");
-      if (typeof fields.percent_work_complete !== "number" || !Number.isFinite(fields.percent_work_complete) || fields.percent_work_complete < 0 || fields.percent_work_complete > 100) {
-        warnings.push({ message: `update_task.percent_work_complete は 0 以上 100 以下の数値が必要です: ${task.uid}`, scope: "tasks", uid: task.uid, label: task.name || task.uid });
+      if (typeof fields.percent_work_complete !== "number" || !Number.isInteger(fields.percent_work_complete) || fields.percent_work_complete < 0 || fields.percent_work_complete > 100) {
+        warnings.push({ message: `update_task.percent_work_complete は 0 以上 100 以下の整数が必要です: ${task.uid}`, scope: "tasks", uid: task.uid, label: task.name || task.uid });
       } else if (task.percentWorkComplete !== fields.percent_work_complete) {
         changes.push({ scope: "tasks", uid: task.uid, label: task.name || task.uid, field: "percentWorkComplete", before: task.percentWorkComplete, after: fields.percent_work_complete });
         task.percentWorkComplete = fields.percent_work_complete;

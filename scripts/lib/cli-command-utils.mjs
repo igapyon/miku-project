@@ -31,17 +31,30 @@ export async function loadWorkbookInput(api, inputPath, context) {
   return api.workbookJson.importAsProjectModel(stateDocument);
 }
 
-export function parseOptionalNonNegativeInteger(value, optionName) {
+export function parseOptionalNonNegativeInteger(value, optionName, maximum) {
   if (value === undefined) {
     return undefined;
   }
   if (!/^\d+$/.test(value)) {
-    throw new CliUsageError(`${optionName} には 0 以上の整数を指定してください`, "invalid_integer_option", {
+    throw new CliUsageError(integerOptionMessage(optionName, maximum), "invalid_integer_option", {
       option: optionName,
-      expected: "non_negative_integer"
+      expected: maximum === undefined ? "non_negative_integer" : `integer_between_0_and_${maximum}`
     });
   }
-  return Number(value);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || (maximum !== undefined && parsed > maximum)) {
+    throw new CliUsageError(integerOptionMessage(optionName, maximum), "invalid_integer_option", {
+      option: optionName,
+      expected: maximum === undefined ? "non_negative_integer" : `integer_between_0_and_${maximum}`
+    });
+  }
+  return parsed;
+}
+
+function integerOptionMessage(optionName, maximum) {
+  return maximum === undefined
+    ? `${optionName} には 0 以上の整数を指定してください`
+    : `${optionName} には 0 以上 ${maximum} 以下の整数を指定してください`;
 }
 
 export function parsePhaseDetailMode(value) {

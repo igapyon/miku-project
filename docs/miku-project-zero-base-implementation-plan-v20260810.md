@@ -262,6 +262,8 @@ v1 scenarioの全artifactに役割、寿命、schema versionがあり、operatio
 
 結果: 2026-08-10に通過。format and loss contractとchange contractをv1のartifact / format / change契約として承認した。
 
+<a id="zb-p3-cli-diagnostics-共通conformance契約"></a>
+
 ## ZB-P3 CLI・diagnostics・共通conformance契約
 
 依存: `G2`  

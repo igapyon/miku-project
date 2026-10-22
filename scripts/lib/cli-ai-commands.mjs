@@ -117,7 +117,7 @@ export async function runAiCommand(command, options, api) {
       const exported = api.aiViews.exportPhaseDetailView(model, requestedPhaseUid, {
         mode,
         rootUid: options["root-task-uid"],
-        maxDepth: parseOptionalNonNegativeInteger(options["max-depth"], "--max-depth")
+        maxDepth: parseOptionalNonNegativeInteger(options["max-depth"], "--max-depth", 100)
       });
       return {
         output: `${JSON.stringify(exported, null, 2)}\n`,
