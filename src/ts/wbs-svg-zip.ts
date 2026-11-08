@@ -3,21 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 (() => {
-  type ZipEntry = { name: string; data: Uint8Array };
+  type ZipEntry = { name: string; data: string | Uint8Array };
   type ZipWriter = {
     writeZipPackage(
-      entries: Array<{ path: string; data: Uint8Array; compression?: "store" | "deflate" }>,
+      entries: Array<{ path: string; data: string | Uint8Array; compression?: "store" | "deflate" }>,
       options?: { timestamp?: Date; compression?: "store" | "deflate"; order?: "stable" | "input" }
     ): Promise<Uint8Array>;
   };
   type WbsSvgZipHelper = {
     escapeXml(value: string): string;
-    encodeUtf8(value: string): Uint8Array;
     packZip(entries: ZipEntry[]): Promise<Uint8Array>;
   };
 
   function createWbsSvgZipHelper(): WbsSvgZipHelper {
-    const textEncoder = new TextEncoder();
     const officeCore = (globalThis as typeof globalThis & { __mikuprojectMsOfficeCore?: ZipWriter }).__mikuprojectMsOfficeCore;
     if (!officeCore) {
       throw new Error("miku-ms-office-core module is not loaded");
@@ -31,10 +29,6 @@
         .replaceAll("\"", "&quot;");
     }
 
-    function encodeUtf8(value: string): Uint8Array {
-      return textEncoder.encode(value);
-    }
-
     async function packZip(entries: ZipEntry[]): Promise<Uint8Array> {
       return await officeCore.writeZipPackage(
         entries.map((entry) => ({ path: entry.name, data: entry.data, compression: "store" })),
@@ -46,7 +40,7 @@
       );
     }
 
-    return { escapeXml, encodeUtf8, packZip };
+    return { escapeXml, packZip };
   }
 
   (globalThis as typeof globalThis & {

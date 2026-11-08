@@ -5,7 +5,7 @@
 (() => {
   type ZipEntry = {
     name: string;
-    data: Uint8Array;
+    data: string | Uint8Array;
   };
 
   type MonthlyCalendarSvgArchive = {
@@ -44,7 +44,6 @@
     buildDateBand(startDate: string | undefined, finishDate: string | undefined): string[];
     isWeeklyNonWorkingDay(day: string, nonWorkingDayTypes: Set<number>): boolean;
     escapeXml(value: string): string;
-    encodeUtf8(value: string): Uint8Array;
     packZip(entries: ZipEntry[]): Promise<Uint8Array>;
   };
 
@@ -235,7 +234,7 @@
       }));
       const zipEntries: ZipEntry[] = entries.map((entry) => ({
         name: `monthly-calendar/${entry.fileName}`,
-        data: config.encodeUtf8(entry.svg)
+        data: entry.svg
       }));
       const zipBytes = await config.packZip(zipEntries);
       return {
