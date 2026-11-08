@@ -168,7 +168,7 @@
             }));
             const zipEntries = entries.map((entry) => ({
                 name: `monthly-calendar/${entry.fileName}`,
-                data: config.encodeUtf8(entry.svg)
+                data: entry.svg
             }));
             const zipBytes = await config.packZip(zipEntries);
             return {

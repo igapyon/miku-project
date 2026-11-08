@@ -99,7 +99,6 @@
         buildDateBand: (startDate, finishDate) => buildDateBand(startDate, finishDate),
         isWeeklyNonWorkingDay: (day, nonWorkingDayTypes) => isWeeklyNonWorkingDay(day, nonWorkingDayTypes),
         escapeXml: (value) => escapeXml(value),
-        encodeUtf8: (value) => encodeUtf8(value),
         packZip: (entries) => packZip(entries)
     });
     const WBS_SVG_TIMELINE = wbsSvgTimeline.createWbsSvgTimelineHelper({
@@ -178,7 +177,6 @@
     const buildWeeklyBand = (startDate, finishDate) => WBS_SVG_TIMELINE.buildWeeklyBand(startDate, finishDate);
     const buildWeeklyMonthSpans = (weeklyBand) => WBS_SVG_TIMELINE.buildWeeklyMonthSpans(weeklyBand);
     const escapeXml = (value) => WBS_SVG_ZIP.escapeXml(value);
-    const encodeUtf8 = (value) => WBS_SVG_ZIP.encodeUtf8(value);
     const packZip = (entries) => WBS_SVG_ZIP.packZip(entries);
     function exportNativeSvg(model, options = {}) {
         return WBS_SVG_RENDER.exportNativeSvg(model, options);

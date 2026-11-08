@@ -119,7 +119,7 @@
 
   type ZipEntry = {
     name: string;
-    data: Uint8Array;
+    data: string | Uint8Array;
   };
 
   type MonthlyCalendarSvgArchive = {
@@ -322,7 +322,6 @@
         buildDateBand(startDate: string | undefined, finishDate: string | undefined): string[];
         isWeeklyNonWorkingDay(day: string, nonWorkingDayTypes: Set<number>): boolean;
         escapeXml(value: string): string;
-        encodeUtf8(value: string): Uint8Array;
         packZip(entries: ZipEntry[]): Promise<Uint8Array>;
       }) => WbsSvgCalendarHelper;
     };
@@ -340,7 +339,6 @@
     __mikuprojectWbsSvgZip?: {
       createWbsSvgZipHelper: () => {
         escapeXml(value: string): string;
-        encodeUtf8(value: string): Uint8Array;
         packZip(entries: ZipEntry[]): Promise<Uint8Array>;
       };
     };
@@ -520,7 +518,6 @@
     buildDateBand: (startDate, finishDate) => buildDateBand(startDate, finishDate),
     isWeeklyNonWorkingDay: (day, nonWorkingDayTypes) => isWeeklyNonWorkingDay(day, nonWorkingDayTypes),
     escapeXml: (value) => escapeXml(value),
-    encodeUtf8: (value) => encodeUtf8(value),
     packZip: (entries) => packZip(entries)
   });
   const WBS_SVG_TIMELINE = wbsSvgTimeline.createWbsSvgTimelineHelper({
@@ -683,7 +680,6 @@
   const buildWeeklyMonthSpans = (weeklyBand: WeeklyBand[]): Array<{ monthKey: string; startIndex: number; endIndex: number }> =>
     WBS_SVG_TIMELINE.buildWeeklyMonthSpans(weeklyBand);
   const escapeXml = (value: string): string => WBS_SVG_ZIP.escapeXml(value);
-  const encodeUtf8 = (value: string): Uint8Array => WBS_SVG_ZIP.encodeUtf8(value);
   const packZip = (entries: ZipEntry[]): Promise<Uint8Array> => WBS_SVG_ZIP.packZip(entries);
 
   function exportNativeSvg(model: ProjectModel, options: NativeSvgExportOptions = {}): string {
