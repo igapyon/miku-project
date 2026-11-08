@@ -835,7 +835,7 @@ describe("miku-project cli", () => {
     expect(result.stderr).toBe("");
   });
 
-  it("imports xlsx bytes from base64 stdin as workbook json", () => {
+  it("imports xlsx bytes from base64 stdin as workbook json", async () => {
     const loaded = loadMikuprojectCoreApi({ rootDir: repoRoot });
     disposers.push(() => loaded.dispose());
     const model = loaded.api.workbookJson.importAsProjectModel(buildWorkbookState("CLI import xlsx base64 base")).model;
@@ -844,7 +844,7 @@ describe("miku-project cli", () => {
       .find((sheet) => sheet.name === "Project")
       .rows.find((row) => row.cells[0]?.value === "Name")
       .cells[1].value = "CLI import xlsx base64";
-    const bytes = loaded.api.xlsx.encodeWorkbook(xlsxWorkbook);
+    const bytes = await loaded.api.xlsx.encodeWorkbook(xlsxWorkbook);
 
     const result = runCli(["import", "xlsx", "--in-base64", "-", "--out", "-"], {
       input: `${Buffer.from(bytes).toString("base64")}\n`

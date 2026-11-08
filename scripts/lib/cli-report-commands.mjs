@@ -20,7 +20,7 @@ export async function runReportCommand(command, options, api) {
 
   if (action === "wbs-xlsx") {
     ensureBinaryOutputTarget(options, "report wbs-xlsx");
-    const output = api.report.wbsXlsx.exportBytes(model);
+    const output = await api.report.wbsXlsx.exportBytes(model);
     return binaryResult("report wbs-xlsx", "wbs_xlsx", output, options, diagnosticsFormat, warnings);
   }
 
@@ -34,10 +34,11 @@ export async function runReportCommand(command, options, api) {
 
   if (action === "monthly-calendar-svg") {
     ensureBinaryOutputTarget(options, "report monthly-calendar-svg");
+    const archive = await api.report.svg.exportMonthlyCalendar(model);
     return binaryResult(
       "report monthly-calendar-svg",
       "monthly_calendar_svg_zip",
-      api.report.svg.exportMonthlyCalendar(model).zipBytes,
+      archive.zipBytes,
       options,
       diagnosticsFormat,
       warnings
@@ -46,7 +47,8 @@ export async function runReportCommand(command, options, api) {
 
   if (action === "all") {
     ensureBinaryOutputTarget(options, "report all");
-    return binaryResult("report all", "report_bundle_zip", api.report.all.export(model).zipBytes, options, diagnosticsFormat, warnings);
+    const archive = await api.report.all.export(model);
+    return binaryResult("report all", "report_bundle_zip", archive.zipBytes, options, diagnosticsFormat, warnings);
   }
 
   if (action === "wbs-markdown") {

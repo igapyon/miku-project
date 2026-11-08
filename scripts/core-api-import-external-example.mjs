@@ -13,7 +13,7 @@ const { api, dispose } = loadMikuprojectCoreApi({ rootDir: repoRoot });
 
 try {
   const xmlText = fs.readFileSync(dependencyXmlPath, "utf8");
-  const xmlResult = api.importExternal({
+  const xmlResult = await api.importExternal({
     source: { format: "ms_project_xml", text: xmlText },
     mode: "replace"
   });
@@ -21,7 +21,7 @@ try {
   const workbookJson = api.workbookJson.exportDocument(xmlResult.model);
   workbookJson.sheets.Project.find((row) => row.Field === "Name").Value = "Example Merge Import";
 
-  const mergeResult = api.importExternal({
+  const mergeResult = await api.importExternal({
     source: { format: "workbook_json", document: workbookJson },
     mode: "merge",
     baseModel: xmlResult.model

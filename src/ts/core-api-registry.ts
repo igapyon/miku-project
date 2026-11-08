@@ -20,7 +20,7 @@
       };
       importAiJsonDocument: (documentLike: unknown, options?: { baseModel?: ProjectModel }) => unknown;
       importAiJsonText: (sourceText: string, options?: { baseModel?: ProjectModel }) => unknown;
-      importExternal: (input: unknown) => unknown;
+      importExternal: (input: unknown) => Promise<unknown>;
     };
   }).__mikuprojectCoreApiImport;
 

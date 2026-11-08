@@ -397,16 +397,16 @@ describe("miku-project project xlsx", () => {
     expect(optionsSheet.rows[2].cells.map((cell) => cell.value)).toEqual(["ー", "false"]);
   });
 
-  it("can generate a real xlsx from ProjectModel through the workbook adapter", () => {
+  it("can generate a real xlsx from ProjectModel through the workbook adapter", async () => {
     const { excelIo, xml, projectXlsx } = bootModules();
     const codec = new excelIo.XlsxWorkbookCodec();
     const model = xml.importMsProjectXml(xml.SAMPLE_XML);
 
     const workbook = projectXlsx.exportProjectWorkbook(model);
-    const bytes = codec.exportWorkbook(workbook);
-    const entries = codec.listEntries(bytes);
-    const projectSheetXml = new TextDecoder().decode(codec.unpackEntries(bytes)["xl/worksheets/sheet1.xml"]);
-    const optionsSheetXml = new TextDecoder().decode(codec.unpackEntries(bytes)["xl/worksheets/sheet7.xml"]);
+    const bytes = await codec.exportWorkbook(workbook);
+    const entries = await codec.listEntries(bytes);
+    const projectSheetXml = new TextDecoder().decode((await codec.unpackEntries(bytes))["xl/worksheets/sheet1.xml"]);
+    const optionsSheetXml = new TextDecoder().decode((await codec.unpackEntries(bytes))["xl/worksheets/sheet7.xml"]);
 
     expect(entries).toContain("xl/workbook.xml");
     expect(entries).toContain("xl/worksheets/sheet1.xml");
@@ -841,7 +841,7 @@ describe("miku-project project xlsx", () => {
     expect(exportedXml).toContain("<Finish>2026-03-18</Finish>");
   });
 
-  it("round-trips editable fields through workbook and xlsx bytes", () => {
+  it("round-trips editable fields through workbook and xlsx bytes", async () => {
     const { excelIo, xml, projectXlsx } = bootModules();
     const codec = new excelIo.XlsxWorkbookCodec();
     const model = xml.importMsProjectXml(xml.SAMPLE_XML);
@@ -868,8 +868,8 @@ describe("miku-project project xlsx", () => {
     nonWorkingDaysSheet.rows[3].cells[3].value = "Holiday via XLSX";
     nonWorkingDaysSheet.rows[3].cells[4].value = "2026-03-22";
 
-    const bytes = codec.exportWorkbook(workbook);
-    const importedWorkbook = codec.importWorkbook(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const importedWorkbook = await codec.importWorkbook(bytes);
     const importedModel = projectXlsx.importProjectWorkbook(importedWorkbook, model);
 
     expect(importedModel.tasks.find((task) => task.uid === "3").name).toBe("初期実装 via XLSX");

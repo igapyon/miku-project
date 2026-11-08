@@ -26,6 +26,41 @@ try {
     throw new Error("runtime embeddedCorePaths is missing or empty");
   }
   const api = runtime.loadMikuProjectRuntime({ expectedVersion: runtime.version });
+  if (args.xlsxFixture) {
+    const fixtureBytes = new Uint8Array(fs.readFileSync(args.xlsxFixture));
+    const officeCore = globalThis.__mikuprojectMsOfficeCore;
+    const parsedFixture = await officeCore.readZipPackage(fixtureBytes);
+    const fixtureErrors = parsedFixture.diagnostics.filter((item) => item.severity === "error");
+    if (fixtureErrors.length > 0) {
+      throw new Error(fixtureErrors.map((item) => item.message).join("\n"));
+    }
+    const compressedFixture = await officeCore.writeZipPackage(
+      parsedFixture.entries.map(({ path: entryPath, data }) => ({
+        path: entryPath,
+        data
+      })),
+      { compression: "deflate" }
+    );
+    const imported = await api.importExternal({
+      source: { format: "xlsx", bytes: compressedFixture },
+      mode: "replace"
+    });
+    const workbook = await api.xlsx.decodeWorkbook(compressedFixture);
+    if (!Array.isArray(workbook.sheets) || workbook.sheets.length === 0 || imported.model.tasks.length === 0) {
+      throw new Error("compressed XLSX fixture did not produce a project model");
+    }
+    const roundTripBytes = await api.xlsx.encodeWorkbook(api.xlsx.exportWorkbook(imported.model));
+    const roundTripWorkbook = await api.xlsx.decodeWorkbook(roundTripBytes);
+    if (!Array.isArray(roundTripWorkbook.sheets) || roundTripWorkbook.sheets.length === 0) {
+      throw new Error("public XLSX round trip did not produce worksheets");
+    }
+    const monthlyArchive = await api.report.svg.exportMonthlyCalendar(imported.model);
+    const reportArchive = await api.report.all.export(imported.model);
+    if (!(monthlyArchive.zipBytes instanceof Uint8Array) || !(reportArchive.zipBytes instanceof Uint8Array)) {
+      throw new Error("public report APIs did not produce ZIP bytes");
+    }
+    console.log("[smoke:browser-runtime] public async XLSX/report APIs ok (" + workbook.sheets.length + " sheets)");
+  }
   if (!api || api !== globalThis.__mikuProjectCoreApi) {
     throw new Error("runtime did not install __mikuProjectCoreApi");
   }
@@ -45,14 +80,15 @@ function parseArgs(argv) {
   const options = { runtimePath: argv[0] };
   for (let index = 1; index < argv.length; index += 1) {
     const token = argv[index];
-    if (token !== "--expected-version") {
-      throw new Error(`unknown argument: ${token}`);
+    if (token !== "--expected-version" && token !== "--xlsx-fixture") {
+      throw new Error("unknown argument: " + token);
     }
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) {
-      throw new Error(`${token} requires a value`);
+      throw new Error(token + " requires a value");
     }
-    options.expectedVersion = value;
+    if (token === "--expected-version") options.expectedVersion = value;
+    else options.xlsxFixture = value;
     index += 1;
   }
   return options;

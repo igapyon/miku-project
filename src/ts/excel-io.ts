@@ -313,7 +313,7 @@
   }
 
   class XlsxWorkbookCodec {
-    exportWorkbook(workbook: XlsxWorkbookModel): Uint8Array {
+    async exportWorkbook(workbook: XlsxWorkbookModel): Promise<Uint8Array> {
       const normalizedWorkbook = excelIoNormalize.normalizeWorkbook(workbook);
       const entries = excelIoWorkbookBuild.createWorkbookEntries(normalizedWorkbook, {
         createStyleBook: excelIoStylesBuild.createStyleBook,
@@ -328,11 +328,11 @@
         encodeUtf8: excelIoUtil.encodeUtf8,
         escapeXml: excelIoUtil.escapeXml
       });
-      return excelIoZip.packZip(entries);
+      return await excelIoZip.packZip(entries);
     }
 
-    importWorkbook(bytes: Uint8Array): XlsxWorkbookModel {
-      const entries = this.unpackEntries(bytes);
+    async importWorkbook(bytes: Uint8Array): Promise<XlsxWorkbookModel> {
+      const entries = await this.unpackEntries(bytes);
       return excelIoWorkbookParse.parseWorkbookEntries(entries, {
         decodeRequiredEntry: excelIoUtil.decodeRequiredEntry,
         decodeUtf8: excelIoUtil.decodeUtf8,
@@ -349,37 +349,24 @@
     }
 
     async importWorkbookAsync(bytes: Uint8Array): Promise<XlsxWorkbookModel> {
-      const entries = await this.unpackEntriesAsync(bytes);
-      return excelIoWorkbookParse.parseWorkbookEntries(entries, {
-        decodeRequiredEntry: excelIoUtil.decodeRequiredEntry,
-        decodeUtf8: excelIoUtil.decodeUtf8,
-        parseXmlDocument: excelIoUtil.parseXmlDocument,
-        findDirectChild: excelIoUtil.findDirectChild,
-        parseOptionalNumber: excelIoUtil.parseOptionalNumber,
-        validateSheetName: excelIoNormalize.validateSheetName,
-        normalizeMergedRange: excelIoNormalize.normalizeMergedRange,
-        denormalizeColor: excelIoNormalize.denormalizeColor,
-        parseStylesXml: excelIoStylesParse.parseStylesXml,
-        parseSharedStringsXml: excelIoWorksheetParse.parseSharedStringsXml,
-        parseWorksheetXml: excelIoWorksheetParse.parseWorksheetXml
-      });
+      return this.importWorkbook(bytes);
     }
 
-    listEntries(bytes: Uint8Array): string[] {
-      return Object.keys(this.unpackEntries(bytes)).sort();
-    }
-
-    async listEntriesAsync(bytes: Uint8Array): Promise<string[]> {
-      const entries = await this.unpackEntriesAsync(bytes);
+    async listEntries(bytes: Uint8Array): Promise<string[]> {
+      const entries = await this.unpackEntries(bytes);
       return Object.keys(entries).sort();
     }
 
-    unpackEntries(bytes: Uint8Array): Record<string, Uint8Array> {
-      return excelIoZip.unpackZip(bytes);
+    async listEntriesAsync(bytes: Uint8Array): Promise<string[]> {
+      return this.listEntries(bytes);
+    }
+
+    async unpackEntries(bytes: Uint8Array): Promise<Record<string, Uint8Array>> {
+      return excelIoZip.unpackZipAsync(bytes);
     }
 
     async unpackEntriesAsync(bytes: Uint8Array): Promise<Record<string, Uint8Array>> {
-      return excelIoZip.unpackZipAsync(bytes);
+      return this.unpackEntries(bytes);
     }
   }
 

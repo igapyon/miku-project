@@ -23,18 +23,18 @@ afterEach(() => {
 });
 
 describe("core api loader", () => {
-  it("boots __mikuProjectCoreApi for node-side reuse", () => {
+  it("boots __mikuProjectCoreApi for node-side reuse", async () => {
     const loaded = loadMikuprojectCoreApi({ rootDir: repoRoot });
     disposers.push(() => loaded.dispose());
 
     expect(globalThis.__mikuProjectCoreApi).toBe(loaded.api);
     expect(globalThis.__mikuprojectCoreApi).toBe(loaded.api);
 
-    const result = loaded.api.importExternal({
+    const result = await loaded.api.importExternal({
       source: { format: "ms_project_xml", text: dependencyXml },
       mode: "replace"
     });
-    const reportBundle = loaded.api.report.all.export(result.model);
+    const reportBundle = await loaded.api.report.all.export(result.model);
 
     expect(result.kind).toBe("ms_project_xml");
     expect(result.model.tasks.length).toBeGreaterThan(0);

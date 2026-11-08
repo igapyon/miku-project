@@ -3,6 +3,7 @@ import path from "node:path";
 import { JSDOM } from "jsdom";
 
 const ROOT = process.cwd();
+const OUTPUT_DIR = parseOutputDir(process.argv.slice(2));
 const typesCode = fs.readFileSync(path.resolve(ROOT, "src/js/types.js"), "utf8");
 const markdownEscapeCode = fs.readFileSync(path.resolve(ROOT, "src/js/markdown-escape.js"), "utf8");
 const excelIoUtilCode = fs.readFileSync(path.resolve(ROOT, "src/js/excel-io-util.js"), "utf8");
@@ -98,13 +99,13 @@ const richWbsMarkdownText = wbsMarkdown.exportWbsMarkdown(richMarkdownModel, {
   useBusinessDaysForProgressBand: true
 });
 
-const bytes = codec.exportWorkbook(workbook);
-const wbsBytes = codec.exportWorkbook(wbsWorkbook);
-const outputPath = path.resolve(ROOT, "local-data/miku-project-sample.xlsx");
-const wbsOutputPath = path.resolve(ROOT, "local-data/miku-project-wbs-sample.xlsx");
-const wbsMarkdownOutputPath = path.resolve(ROOT, "local-data/miku-project-wbs-sample.md");
-const richWbsMarkdownOutputPath = path.resolve(ROOT, "local-data/miku-project-wbs-sample-rich.md");
-fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+const bytes = await codec.exportWorkbook(workbook);
+const wbsBytes = await codec.exportWorkbook(wbsWorkbook);
+const outputPath = path.resolve(OUTPUT_DIR, "miku-project-sample.xlsx");
+const wbsOutputPath = path.resolve(OUTPUT_DIR, "miku-project-wbs-sample.xlsx");
+const wbsMarkdownOutputPath = path.resolve(OUTPUT_DIR, "miku-project-wbs-sample.md");
+const richWbsMarkdownOutputPath = path.resolve(OUTPUT_DIR, "miku-project-wbs-sample-rich.md");
+fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 fs.writeFileSync(outputPath, Buffer.from(bytes));
 fs.writeFileSync(wbsOutputPath, Buffer.from(wbsBytes));
 fs.writeFileSync(wbsMarkdownOutputPath, wbsMarkdownText, "utf8");
@@ -113,6 +114,14 @@ console.log(`[build:project:xlsx-sample] generated ${path.relative(ROOT, outputP
 console.log(`[build:project:xlsx-sample] generated ${path.relative(ROOT, wbsOutputPath)}`);
 console.log(`[build:project:xlsx-sample] generated ${path.relative(ROOT, wbsMarkdownOutputPath)}`);
 console.log(`[build:project:xlsx-sample] generated ${path.relative(ROOT, richWbsMarkdownOutputPath)}`);
+
+function parseOutputDir(argv) {
+  if (argv.length === 0) return path.resolve(ROOT, "local-data");
+  if (argv.length !== 2 || argv[0] !== "--output-dir" || argv[1].startsWith("--")) {
+    throw new Error("usage: node scripts/build-project-xlsx-sample.mjs [--output-dir <path>]");
+  }
+  return path.resolve(argv[1]);
+}
 
 function buildRichWbsMarkdownSampleModel(model) {
   const cloned = JSON.parse(JSON.stringify(model));

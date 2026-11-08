@@ -55,7 +55,7 @@
   const mikuprojectCoreApiWorkbook = (globalThis as typeof globalThis & {
     __mikuprojectCoreApiWorkbook?: {
       xlsx: {
-        decodeWorkbook: (bytes: Uint8Array) => XlsxWorkbookLike;
+        decodeWorkbook: (bytes: Uint8Array) => Promise<XlsxWorkbookLike>;
         importAsProjectModel: (workbook: XlsxWorkbookLike) => ProjectModel;
         importIntoProjectModel: (workbook: XlsxWorkbookLike, baseModel: ProjectModel) => ProjectModel;
         importIntoProjectModelDetailed?: (
@@ -85,11 +85,11 @@
     };
   }
 
-  function importXlsx(sourceBytes: Uint8Array, mode: "replace" | "merge", baseModel?: ProjectModel) {
+  async function importXlsx(sourceBytes: Uint8Array, mode: "replace" | "merge", baseModel?: ProjectModel) {
     if (mode === "patch") {
       throw new Error("XLSX は replace または merge import のみ対応です");
     }
-    const workbook = mikuprojectCoreApiWorkbook.xlsx.decodeWorkbook(sourceBytes);
+    const workbook = await mikuprojectCoreApiWorkbook.xlsx.decodeWorkbook(sourceBytes);
     if (mode === "replace") {
       return {
         kind: "xlsx" as const,

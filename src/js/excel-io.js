@@ -44,7 +44,7 @@
         throw new Error("mikuproject Excel workbook build module is not loaded");
     }
     class XlsxWorkbookCodec {
-        exportWorkbook(workbook) {
+        async exportWorkbook(workbook) {
             const normalizedWorkbook = excelIoNormalize.normalizeWorkbook(workbook);
             const entries = excelIoWorkbookBuild.createWorkbookEntries(normalizedWorkbook, {
                 createStyleBook: excelIoStylesBuild.createStyleBook,
@@ -59,10 +59,10 @@
                 encodeUtf8: excelIoUtil.encodeUtf8,
                 escapeXml: excelIoUtil.escapeXml
             });
-            return excelIoZip.packZip(entries);
+            return await excelIoZip.packZip(entries);
         }
-        importWorkbook(bytes) {
-            const entries = this.unpackEntries(bytes);
+        async importWorkbook(bytes) {
+            const entries = await this.unpackEntries(bytes);
             return excelIoWorkbookParse.parseWorkbookEntries(entries, {
                 decodeRequiredEntry: excelIoUtil.decodeRequiredEntry,
                 decodeUtf8: excelIoUtil.decodeUtf8,
@@ -78,33 +78,20 @@
             });
         }
         async importWorkbookAsync(bytes) {
-            const entries = await this.unpackEntriesAsync(bytes);
-            return excelIoWorkbookParse.parseWorkbookEntries(entries, {
-                decodeRequiredEntry: excelIoUtil.decodeRequiredEntry,
-                decodeUtf8: excelIoUtil.decodeUtf8,
-                parseXmlDocument: excelIoUtil.parseXmlDocument,
-                findDirectChild: excelIoUtil.findDirectChild,
-                parseOptionalNumber: excelIoUtil.parseOptionalNumber,
-                validateSheetName: excelIoNormalize.validateSheetName,
-                normalizeMergedRange: excelIoNormalize.normalizeMergedRange,
-                denormalizeColor: excelIoNormalize.denormalizeColor,
-                parseStylesXml: excelIoStylesParse.parseStylesXml,
-                parseSharedStringsXml: excelIoWorksheetParse.parseSharedStringsXml,
-                parseWorksheetXml: excelIoWorksheetParse.parseWorksheetXml
-            });
+            return this.importWorkbook(bytes);
         }
-        listEntries(bytes) {
-            return Object.keys(this.unpackEntries(bytes)).sort();
-        }
-        async listEntriesAsync(bytes) {
-            const entries = await this.unpackEntriesAsync(bytes);
+        async listEntries(bytes) {
+            const entries = await this.unpackEntries(bytes);
             return Object.keys(entries).sort();
         }
-        unpackEntries(bytes) {
-            return excelIoZip.unpackZip(bytes);
+        async listEntriesAsync(bytes) {
+            return this.listEntries(bytes);
+        }
+        async unpackEntries(bytes) {
+            return excelIoZip.unpackZipAsync(bytes);
         }
         async unpackEntriesAsync(bytes) {
-            return excelIoZip.unpackZipAsync(bytes);
+            return this.unpackEntries(bytes);
         }
     }
     globalThis.__mikuprojectExcelIo = {

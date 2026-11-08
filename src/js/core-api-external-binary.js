@@ -22,11 +22,11 @@
             warnings: []
         };
     }
-    function importXlsx(sourceBytes, mode, baseModel) {
+    async function importXlsx(sourceBytes, mode, baseModel) {
         if (mode === "patch") {
             throw new Error("XLSX は replace または merge import のみ対応です");
         }
-        const workbook = mikuprojectCoreApiWorkbook.xlsx.decodeWorkbook(sourceBytes);
+        const workbook = await mikuprojectCoreApiWorkbook.xlsx.decodeWorkbook(sourceBytes);
         if (mode === "replace") {
             return {
                 kind: "xlsx",

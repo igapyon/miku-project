@@ -443,7 +443,7 @@ describe("miku-project wbs xlsx", () => {
     vi.useRealTimers();
   });
 
-  it("can generate a real xlsx from the dedicated WBS workbook", () => {
+  it("can generate a real xlsx from the dedicated WBS workbook", async () => {
     const { excelIo, xml, wbsXlsx } = bootModules();
     const codec = new excelIo.XlsxWorkbookCodec();
     const model = xml.importMsProjectXml(xml.SAMPLE_XML);
@@ -451,9 +451,9 @@ describe("miku-project wbs xlsx", () => {
     vi.setSystemTime(new Date("2026-03-29T22:49:00+09:00"));
 
     const workbook = wbsXlsx.exportWbsWorkbook(model);
-    const bytes = codec.exportWorkbook(workbook);
-    const entries = codec.listEntries(bytes);
-    const unpackedEntries = codec.unpackEntries(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const entries = await codec.listEntries(bytes);
+    const unpackedEntries = await codec.unpackEntries(bytes);
     const sheetXml = new TextDecoder().decode(unpackedEntries["xl/worksheets/sheet1.xml"]);
     const stylesXml = new TextDecoder().decode(unpackedEntries["xl/styles.xml"]);
 

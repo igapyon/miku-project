@@ -62,7 +62,7 @@ export async function runExchangeCommand(command, options, api) {
       ensureWorkbookJson(api, stateDocument, "export xlsx");
       const { model, warnings } = api.workbookJson.importAsProjectModel(stateDocument);
       const workbook = api.xlsx.exportWorkbook(model);
-      const output = api.xlsx.encodeWorkbook(workbook);
+      const output = await api.xlsx.encodeWorkbook(workbook);
       return {
         output,
         diagnostics: buildResultDiagnostics("export xlsx", diagnosticsFormat, {
@@ -73,7 +73,7 @@ export async function runExchangeCommand(command, options, api) {
             outputBase64: options["out-base64"]
           }),
           output_kind: "xlsx",
-          byte_length: output.length
+          byte_length: output.byteLength
         })
       };
     }
@@ -85,7 +85,7 @@ export async function runExchangeCommand(command, options, api) {
     if (action === "xlsx") {
       ensureBinaryInputSource(options, "import xlsx");
       const sourceBytes = await readBinaryInput(options, "import xlsx");
-      const imported = api.importExternal({
+      const imported = await api.importExternal({
         source: { format: "xlsx", bytes: sourceBytes },
         mode: "replace"
       });

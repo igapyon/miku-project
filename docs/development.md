@@ -2,6 +2,8 @@
 
 ## Setup
 
+Node.js 22 以上を使用してください。
+
 ```bash
 npm ci
 ```

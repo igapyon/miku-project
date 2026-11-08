@@ -105,56 +105,11 @@
     throw new Error(`importExternal: format=${sourceFormat} mode=${mode} には baseModel が必要です`);
   }
 
-  function importExternal(input: {
+  async function importExternal(input: {
     source: ExternalImportSource;
     mode: ExternalImportMode;
     baseModel?: ProjectModel;
-  }):
-    | {
-      kind: "ms_project_xml";
-      mode: "replace";
-      model: ProjectModel;
-      warnings: [];
-    }
-    | {
-      kind: "xlsx";
-      mode: "replace";
-      model: ProjectModel;
-      warnings: [];
-    }
-    | {
-      kind: "xlsx";
-      mode: "merge";
-      model: ProjectModel;
-      changes: ImportChange[];
-      warnings: [];
-    }
-    | {
-      kind: "project_draft_view";
-      mode: "replace";
-      model: ProjectModel;
-      warnings: [];
-    }
-    | {
-      kind: "workbook_json";
-      mode: "replace";
-      model: ProjectModel;
-      warnings: Array<{ message: string }>;
-    }
-    | {
-      kind: "workbook_json";
-      mode: "merge";
-      model: ProjectModel;
-      changes: ImportChange[];
-      warnings: Array<{ message: string }>;
-    }
-    | {
-      kind: "patch_json";
-      mode: "patch";
-      model: ProjectModel;
-      changes: ImportChange[];
-      warnings: ScopedWarning[];
-    } {
+  }) {
     const { source, mode, baseModel } = input;
 
     if (source.format === "ms_project_xml") {
@@ -167,7 +122,7 @@
       if (mode === "merge") {
         assertBaseModelRequired(source.format, mode, baseModel);
       }
-      return mikuprojectCoreApiExternalBinary.importXlsx(source.bytes, mode, baseModel);
+      return await mikuprojectCoreApiExternalBinary.importXlsx(source.bytes, mode, baseModel);
     }
 
     if (

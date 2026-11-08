@@ -49,7 +49,7 @@ function assertRequiredFilesExist() {
 
 function buildRuntimeSource(packageVersion) {
   const moduleBlocks = CORE_API_MODULE_RELATIVE_PATHS.map((relativePath) => {
-    const source = prepareBrowserModuleSource(relativePath, readRepoFile(relativePath));
+    const source = readRepoFile(relativePath);
     return `  // embedded core module: ${relativePath}\n${indentSource(source, "  ")}`;
   });
 
@@ -93,29 +93,6 @@ function buildRuntimeSource(packageVersion) {
     "export default loadMikuProjectRuntime;",
     ""
   ].join("\n");
-}
-
-function prepareBrowserModuleSource(relativePath, source) {
-  if (relativePath !== "src/js/ms-office-core.js") {
-    return source;
-  }
-
-  const nodeFallback = /  function getNodeZlib\(\) \{[\s\S]*?\n  \}\n  function readOfficePackage\(/;
-  if (!nodeFallback.test(source)) {
-    throw new Error("ms-office-core.js の Node ZIP fallback を特定できませんでした");
-  }
-
-  return source
-    .replace(
-      nodeFallback,
-      [
-        "  function getSynchronousZipCodec() {",
-        "    throw new Error(\"Synchronous ZIP deflate operations are unavailable in the browser runtime. Use stored entries, readZipPackageAsync with DecompressionStream, or inject an async inflater.\");",
-        "  }",
-        "  function readOfficePackage("
-      ].join("\n")
-    )
-    .replaceAll("getNodeZlib", "getSynchronousZipCodec");
 }
 
 function assertBrowserRuntimeBoundary(source) {

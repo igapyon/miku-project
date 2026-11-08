@@ -32,7 +32,7 @@ export async function runStateCommand(command, options, api) {
     ]);
     const draftDocument = parseJsonLike(await readTextInput(options.in), api, "state from-draft");
     ensureKind(api, draftDocument, "project_draft_view", "state from-draft");
-    const imported = api.importExternal({
+    const imported = await api.importExternal({
       source: { format: "project_draft_view", document: draftDocument },
       mode: "replace"
     });
@@ -117,7 +117,7 @@ export async function runStateCommand(command, options, api) {
 
     const imported = api.workbookJson.importAsProjectModel(stateDocument);
     const baseModel = imported.model;
-    const patched = api.importExternal({
+    const patched = await api.importExternal({
       source: { format: "patch_json", document: patchDocument },
       mode: "patch",
       baseModel

@@ -38,7 +38,7 @@
 
   (globalThis as typeof globalThis & {
     __mikuprojectCoreApiPublic?: {
-      version: 1;
+      version: 2;
       getAiJsonSpecText: typeof mikuprojectCoreApiRegistry.getAiJsonSpecText;
       getAiJsonSpec: typeof mikuprojectCoreApiRegistry.getAiJsonSpec;
       detectAiJsonDocumentKind: typeof mikuprojectCoreApiRegistry.detectAiJsonDocumentKind;
@@ -56,7 +56,7 @@
       report: unknown;
     };
   }).__mikuprojectCoreApiPublic = {
-    version: 1,
+    version: 2,
     ...mikuprojectCoreApiRegistry
   };
 })();

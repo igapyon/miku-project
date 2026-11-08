@@ -28,13 +28,13 @@
         throw new Error("mikuproject WBS Markdown module is not loaded");
     }
     globalThis.__mikuprojectCoreApiReport = {
-        exportAllReportEntries(model, options = {}) {
+        async exportAllReportEntries(model, options = {}) {
             const codec = new mikuprojectExcelIo.XlsxWorkbookCodec();
-            const monthlyArchive = mikuprojectNativeSvg.exportMonthlyWbsCalendarSvgArchive(model);
+            const monthlyArchive = await mikuprojectNativeSvg.exportMonthlyWbsCalendarSvgArchive(model);
             const entries = [
                 {
                     name: "wbs.xlsx",
-                    data: codec.exportWorkbook(mikuprojectWbsXlsx.exportWbsWorkbook(model, options))
+                    data: await codec.exportWorkbook(mikuprojectWbsXlsx.exportWbsWorkbook(model, options))
                 },
                 {
                     name: "wbs.md",

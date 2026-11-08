@@ -23,14 +23,15 @@ function run(args, entry = cli) {
     cwd: directory, input: "", encoding: "utf8", timeout: 10000
   });
 }
-beforeAll(() => {
+beforeAll(async () => {
   directory = fs.mkdtempSync(path.join(os.tmpdir(), "miku-project-cli-review-regressions-"));
   const loaded = loadMikuprojectCoreApi({ rootDir: root });
   try {
-    state = loaded.api.workbookJson.exportDocument(loaded.api.importExternal({
+    const imported = await loaded.api.importExternal({
       source: { format: "ms_project_xml", text: fs.readFileSync(path.join(root, "testdata/hierarchy.xml"), "utf8") },
       mode: "replace"
-    }).model);
+    });
+    state = loaded.api.workbookJson.exportDocument(imported.model);
   } finally {
     loaded.dispose();
   }
