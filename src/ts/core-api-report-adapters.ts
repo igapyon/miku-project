@@ -47,7 +47,7 @@
       exportAllReportEntries: (
         model: ProjectModel,
         options?: ReportProgressOptions
-      ) => Array<{ name: string; data: Uint8Array }>;
+      ) => Promise<Array<{ name: string; data: Uint8Array }>>;
     };
   }).__mikuprojectCoreApiReport;
 
@@ -70,7 +70,7 @@
   const mikuprojectCoreApiWorkbook = (globalThis as typeof globalThis & {
     __mikuprojectCoreApiWorkbook?: {
       xlsx: {
-        encodeWorkbook: (workbook: XlsxWorkbookLike) => Uint8Array;
+        encodeWorkbook: (workbook: XlsxWorkbookLike) => Promise<Uint8Array>;
       };
     };
   }).__mikuprojectCoreApiWorkbook;
@@ -106,10 +106,10 @@
         options?: ReportProgressOptions & { labelMode?: "near" | "list" }
       ) => string;
       exportWeeklyNativeSvg: (model: ProjectModel, options?: ReportDisplayRangeOptions) => string;
-      exportMonthlyWbsCalendarSvgArchive: (model: ProjectModel) => {
+      exportMonthlyWbsCalendarSvgArchive: (model: ProjectModel) => Promise<{
         entries: Array<{ fileName: string; svg: string }>;
         zipBytes: Uint8Array;
-      };
+      }>;
     };
   }).__mikuprojectNativeSvg;
 
@@ -134,8 +134,8 @@
   }).__mikuprojectCoreApiReportAdapters = {
     report: {
       all: {
-        export: (model: ProjectModel, options: ReportProgressOptions = {}) => {
-          const entries = mikuprojectCoreApiReport.exportAllReportEntries(model, options);
+        export: async (model: ProjectModel, options: ReportProgressOptions = {}) => {
+          const entries = await mikuprojectCoreApiReport.exportAllReportEntries(model, options);
           return {
             entries,
             zipBytes: mikuprojectMainUtil.packZipEntries(entries)
@@ -144,8 +144,8 @@
       },
       wbsXlsx: {
         exportWorkbook: mikuprojectWbsXlsx.exportWbsWorkbook,
-        exportBytes: (model: ProjectModel, options: ReportProgressOptions = {}) =>
-          mikuprojectCoreApiWorkbook.xlsx.encodeWorkbook(mikuprojectWbsXlsx.exportWbsWorkbook(model, options))
+        exportBytes: async (model: ProjectModel, options: ReportProgressOptions = {}) =>
+          await mikuprojectCoreApiWorkbook.xlsx.encodeWorkbook(mikuprojectWbsXlsx.exportWbsWorkbook(model, options))
       },
       svg: {
         exportDaily: mikuprojectNativeSvg.exportNativeSvg,

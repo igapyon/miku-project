@@ -8,7 +8,7 @@
         throw new Error("mikuproject core api registry module is not loaded");
     }
     globalThis.__mikuprojectCoreApiPublic = {
-        version: 1,
+        version: 2,
         ...mikuprojectCoreApiRegistry
     };
 })();

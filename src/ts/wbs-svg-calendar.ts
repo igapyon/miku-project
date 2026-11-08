@@ -17,7 +17,7 @@
   };
 
   type WbsSvgCalendarHelper = {
-    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): MonthlyCalendarSvgArchive;
+    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): Promise<MonthlyCalendarSvgArchive>;
     exportMonthlyWbsCalendarSvg(
       model: ProjectModel,
       monthKey: string,
@@ -45,7 +45,7 @@
     isWeeklyNonWorkingDay(day: string, nonWorkingDayTypes: Set<number>): boolean;
     escapeXml(value: string): string;
     encodeUtf8(value: string): Uint8Array;
-    packZip(entries: ZipEntry[]): Uint8Array;
+    packZip(entries: ZipEntry[]): Promise<Uint8Array>;
   };
 
   function createWbsSvgCalendarHelper(config: WbsSvgCalendarConfig): WbsSvgCalendarHelper {
@@ -225,7 +225,7 @@
       return parts.join("");
     }
 
-    function exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): MonthlyCalendarSvgArchive {
+    async function exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): Promise<MonthlyCalendarSvgArchive> {
       const holidaySet = new Set(config.collectWbsHolidayDates(model));
       const nonWorkingDayTypes = config.collectProjectNonWorkingDayTypes(model);
       const months = buildProjectMonthKeys(model.project.startDate, model.project.finishDate);
@@ -237,7 +237,7 @@
         name: `monthly-calendar/${entry.fileName}`,
         data: config.encodeUtf8(entry.svg)
       }));
-      const zipBytes = config.packZip(zipEntries);
+      const zipBytes = await config.packZip(zipEntries);
       return {
         entries,
         zipBytes

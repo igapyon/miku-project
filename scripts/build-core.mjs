@@ -5,7 +5,7 @@ import { transform } from "esbuild";
 import { CORE_API_MODULE_RELATIVE_PATHS } from "./lib/runtime-module-paths.mjs";
 
 const ROOT = process.cwd();
-const MS_OFFICE_CORE_VENDOR_PATH = "src/vendor/miku-ms-office-core-0.5.0.1.mjs";
+const MS_OFFICE_CORE_VENDOR_PATH = "src/vendor/miku-ms-office-core-0.8.1.mjs";
 const CORE_TYPESCRIPT_PATHS = CORE_API_MODULE_RELATIVE_PATHS
   .filter((relativePath) => relativePath !== "src/js/ms-office-core.js")
   .map((relativePath) => relativePath.replace("/js/", "/ts/").replace(/\.js$/, ".ts"));

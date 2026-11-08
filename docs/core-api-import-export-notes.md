@@ -210,3 +210,56 @@ bundle/miku-project-sources.tgz
 `miku-project-sources.tgz` は実行には不要だが、受け取り側が source / docs / tests を確認し、必要に応じて再ビルドや監査を行うための補助 artifact として扱う。
 
 `miku-project-skills` 側では、この artifact を `skills/miku-project/runtime/miku-project.mjs` のような skill-local runtime path に配置して呼び出す想定である。
+
+## ZIP-backed API v2 migration
+
+The next product version is `2.0.0`. `globalThis.__mikuProjectCoreApi.version` is `2` because binary XLSX and archive operations now return Promises.
+
+```js
+const workbook = api.xlsx.exportWorkbook(model); // synchronous model conversion
+const xlsxBytes = await api.xlsx.encodeWorkbook(workbook);
+const decodedWorkbook = await api.xlsx.decodeWorkbook(xlsxBytes);
+const imported = await api.importExternal({
+  source: { format: "xlsx", bytes: xlsxBytes },
+  mode: "replace"
+});
+const report = await api.report.all.export(imported.model);
+```
+
+`importExternal()` returns a Promise for every input format, including XML, workbook JSON, draft views, and patches. Update all call sites to `await` it. Pure model conversion, text rendering, and workbook JSON operations remain synchronous.
+
+The XLSX and report-all writers retain the existing product ZIP bytes for the recorded Node/Java byte-parity contract. The standalone monthly SVG archive uses core 0.8.1 with STORE compression, input order, and the existing 2025-01-01 UTC timestamp; the ZIP UTF-8 flag follows the shared core writer. Entry names and SVG contents remain unchanged. CLI command/schema v1 and persisted workbook JSON v1 are unaffected.
+
+## Implementation record: fixed-core async ZIP migration (2026-11-06)
+
+The product work uses the vendored `miku-ms-office-core` 0.8.0 assets unchanged. Public `xlsx.encodeWorkbook`, `xlsx.decodeWorkbook`, `importExternal`, WBS XLSX bytes, monthly SVG archive, and report-all export now return Promises. Pure model conversion remains synchronous. `importExternal` is asynchronous for XML, XLSX, workbook JSON, draft views, and patches; CLI exchange/state/report paths await their results.
+
+The product package candidate is `2.0.0`, and `__mikuProjectCoreApi.version` is `2`. CLI schema v1 and persisted workbook JSON v1 are unchanged.
+
+The XLSX writer retains its legacy ZIP headers and zero DOS timestamp. The report-all writer retains its legacy headers and fixed timestamp to preserve the documented Node/Java byte-parity path. The standalone monthly SVG archive now calls core `writeZipPackage` with STORE compression, input order, and `2025-01-01T00:00:00Z`; the shared writer sets the UTF-8 flag. Monthly entry names and SVG payload generation are unchanged.
+
+Builds completed successfully:
+
+- `node scripts/build-core.mjs`
+- `node scripts/build-browser-runtime.mjs`
+- `node scripts/build-cli-bundle.mjs`
+
+The existing browser-runtime smoke was updated to exercise the public async API. Artifact-level ZIP metadata/member comparison, focused/full test suites, CLI/runtime smoke execution, and real-browser execution have not been run. The build results do not establish those acceptance gates. The browser smoke and test files are prepared for those later checks.
+
+## Core vendor follow-up: 0.8.1 (2026-11-06)
+
+The user requested that miku-project follow `miku-ms-office-core` 0.8.1. The three
+versioned vendor assets were downloaded directly from GitHub Release v0.8.1, and their
+SHA-256 digests matched the published asset API. `scripts/build-core.mjs` now generates its adapter from the 0.8.1 module. The
+core source diff from 0.8.0 to 0.8.1 contains no ZIP implementation or public API
+changes; package version and consumer-policy documentation changed.
+
+SHA-256 digests:
+
+- `miku-ms-office-core-0.8.1.mjs`: `4777ae1c6143f9f360b0c1489665708faab0fc3ba4f65e7fd0f566aebcd6949e`
+- `miku-ms-office-core-0.8.1.mjs.map`: `b36240dd3a17c13a93c93124fafb0a77d3ea145233ca56c074177c981ec8b265`
+- `miku-ms-office-core-0.8.1.d.mts`: `3c67737ff84c1eda496bc3b421d828b04c4aaba7de38e21e94e0988fdc7c734d`
+
+The product source, browser-runtime, and CLI bundles were rebuilt after the vendor
+switch. Tests, CLI/browser smoke execution, and artifact-level ZIP comparison were
+not run as part of this follow-up.

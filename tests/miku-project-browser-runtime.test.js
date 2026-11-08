@@ -21,10 +21,23 @@ const browserSmokeFixture = readFileSync(
 
 let runtimePath;
 let runtimeSource;
+let xlsxFixturePath;
 
 beforeAll(async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "miku-project-browser-runtime-test-"));
   runtimePath = path.join(tempDir, "miku-project-runtime.mjs");
+  xlsxFixturePath = path.join(tempDir, "miku-project-sample.xlsx");
+  const fixtureResult = spawnSync(process.execPath, [
+    path.resolve(repoRoot, "scripts/build-project-xlsx-sample.mjs"),
+    "--output-dir",
+    tempDir
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8"
+  });
+  if (fixtureResult.status !== 0) {
+    throw new Error("XLSX fixture build failed:\n" + fixtureResult.stdout + "\n" + fixtureResult.stderr);
+  }
   const result = spawnSync(process.execPath, [builderPath, "--out", runtimePath], {
     cwd: repoRoot,
     encoding: "utf8"
@@ -68,7 +81,9 @@ describe("browser runtime bundle", () => {
       smokePath,
       runtimePath,
       "--expected-version",
-      packageJson.version
+      packageJson.version,
+      "--xlsx-fixture",
+      xlsxFixturePath
     ], {
       cwd: repoRoot,
       encoding: "utf8"

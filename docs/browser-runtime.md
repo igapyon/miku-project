@@ -50,7 +50,7 @@ browser runtime は次を含めない。
 - CLI entrypoint と CLI 自動実行
 - UI event handler、download adapter、画面初期化
 
-Office ZIP helper の同期 Node zlib fallback は browser runtime 生成時に無効化する。browser runtime では stored ZIP entry、`DecompressionStream` を用いる async read、または明示的に注入した async inflater を使用する。これは Node.js CLI bundle の動作を変更しない。
+browser runtime の共通 ZIP reader は非同期 API を使い、DEFLATE 展開には標準の `DecompressionStream` を使う。アプリ固有の同期 `packZip` / `unpackZip` は独立した STORE 専用 helper として維持する。browser runtime 生成時に Node.js 固有コードを書き換える処理は行わない。
 
 ## Build and verification
 

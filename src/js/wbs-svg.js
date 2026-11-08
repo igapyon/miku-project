@@ -24,8 +24,6 @@
     const MONTHLY_BOTTOM_PADDING = 24;
     const MONTHLY_MAX_ITEMS_PER_DAY = 3;
     const MONTHLY_MAX_LABEL_CHARS = 15;
-    const ZIP_FIXED_MOD_TIME = 0;
-    const ZIP_FIXED_MOD_DATE = ((2025 - 1980) << 9) | (1 << 5) | 1;
     const WEEKLY_HEADER_HEIGHT = 96;
     const WEEKLY_TOP_PADDING = 22;
     const WEEKLY_BOTTOM_PADDING = 28;
@@ -109,10 +107,7 @@
         parseDateOnly: (value) => parseDateOnly(value),
         formatDateOnly: (value) => formatDateOnly(value)
     });
-    const WBS_SVG_ZIP = wbsSvgZip.createWbsSvgZipHelper({
-        fixedModTime: ZIP_FIXED_MOD_TIME,
-        fixedModDate: ZIP_FIXED_MOD_DATE
-    });
+    const WBS_SVG_ZIP = wbsSvgZip.createWbsSvgZipHelper();
     const WBS_SVG_BARS = wbsSvgBars.createWbsSvgBarsHelper();
     const WBS_SVG_VIEWPORT = wbsSvgViewport.createWbsSvgViewportHelper();
     const WBS_SVG_AXIS = wbsSvgAxis.createWbsSvgAxisHelper();

@@ -131,7 +131,7 @@
   };
 
   type WbsSvgCalendarHelper = {
-    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): MonthlyCalendarSvgArchive;
+    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): Promise<MonthlyCalendarSvgArchive>;
     exportMonthlyWbsCalendarSvg(
       model: ProjectModel,
       monthKey: string,
@@ -256,7 +256,7 @@
   type NativeSvgFacade = {
     exportNativeSvg(model: ProjectModel, options?: NativeSvgExportOptions): string;
     exportWeeklyNativeSvg(model: ProjectModel, options?: NativeSvgExportOptions): string;
-    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): MonthlyCalendarSvgArchive;
+    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): Promise<MonthlyCalendarSvgArchive>;
     collectWbsHolidayDates(model: ProjectModel): string[];
   };
 
@@ -281,8 +281,6 @@
   const MONTHLY_BOTTOM_PADDING = 24;
   const MONTHLY_MAX_ITEMS_PER_DAY = 3;
   const MONTHLY_MAX_LABEL_CHARS = 15;
-  const ZIP_FIXED_MOD_TIME = 0;
-  const ZIP_FIXED_MOD_DATE = ((2025 - 1980) << 9) | (1 << 5) | 1;
   const WEEKLY_HEADER_HEIGHT = 96;
   const WEEKLY_TOP_PADDING = 22;
   const WEEKLY_BOTTOM_PADDING = 28;
@@ -325,7 +323,7 @@
         isWeeklyNonWorkingDay(day: string, nonWorkingDayTypes: Set<number>): boolean;
         escapeXml(value: string): string;
         encodeUtf8(value: string): Uint8Array;
-        packZip(entries: ZipEntry[]): Uint8Array;
+        packZip(entries: ZipEntry[]): Promise<Uint8Array>;
       }) => WbsSvgCalendarHelper;
     };
   }).__mikuprojectWbsSvgCalendar;
@@ -340,13 +338,10 @@
   }).__mikuprojectWbsSvgTimeline;
   const wbsSvgZip = (globalThis as typeof globalThis & {
     __mikuprojectWbsSvgZip?: {
-      createWbsSvgZipHelper: (config: {
-        fixedModTime: number;
-        fixedModDate: number;
-      }) => {
+      createWbsSvgZipHelper: () => {
         escapeXml(value: string): string;
         encodeUtf8(value: string): Uint8Array;
-        packZip(entries: ZipEntry[]): Uint8Array;
+        packZip(entries: ZipEntry[]): Promise<Uint8Array>;
       };
     };
   }).__mikuprojectWbsSvgZip;
@@ -461,7 +456,7 @@
         collectWbsHolidayDates(model: ProjectModel): string[];
         exportNativeSvg(model: ProjectModel, options?: NativeSvgExportOptions): string;
         exportWeeklyNativeSvg(model: ProjectModel, options?: NativeSvgExportOptions): string;
-        exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): MonthlyCalendarSvgArchive;
+        exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): Promise<MonthlyCalendarSvgArchive>;
       }) => NativeSvgFacade;
     };
   }).__mikuprojectWbsSvgPublic;
@@ -533,10 +528,7 @@
     parseDateOnly: (value) => parseDateOnly(value),
     formatDateOnly: (value) => formatDateOnly(value)
   });
-  const WBS_SVG_ZIP = wbsSvgZip.createWbsSvgZipHelper({
-    fixedModTime: ZIP_FIXED_MOD_TIME,
-    fixedModDate: ZIP_FIXED_MOD_DATE
-  });
+  const WBS_SVG_ZIP = wbsSvgZip.createWbsSvgZipHelper();
   const WBS_SVG_BARS = wbsSvgBars.createWbsSvgBarsHelper();
   const WBS_SVG_VIEWPORT = wbsSvgViewport.createWbsSvgViewportHelper();
   const WBS_SVG_AXIS = wbsSvgAxis.createWbsSvgAxisHelper();
@@ -668,7 +660,7 @@
       cornerRadius: number;
     }
   ): string[] => WBS_SVG_LABELS.buildDependencyConnectorElements(tasks, rows, chartOriginX, chartOriginY, config);
-  const exportMonthlyWbsCalendarSvgArchive = (model: ProjectModel): MonthlyCalendarSvgArchive =>
+  const exportMonthlyWbsCalendarSvgArchive = (model: ProjectModel): Promise<MonthlyCalendarSvgArchive> =>
     WBS_SVG_CALENDAR.exportMonthlyWbsCalendarSvgArchive(model);
   const exportMonthlyWbsCalendarSvg = (
     model: ProjectModel,
@@ -692,7 +684,7 @@
     WBS_SVG_TIMELINE.buildWeeklyMonthSpans(weeklyBand);
   const escapeXml = (value: string): string => WBS_SVG_ZIP.escapeXml(value);
   const encodeUtf8 = (value: string): Uint8Array => WBS_SVG_ZIP.encodeUtf8(value);
-  const packZip = (entries: ZipEntry[]): Uint8Array => WBS_SVG_ZIP.packZip(entries);
+  const packZip = (entries: ZipEntry[]): Promise<Uint8Array> => WBS_SVG_ZIP.packZip(entries);
 
   function exportNativeSvg(model: ProjectModel, options: NativeSvgExportOptions = {}): string {
     return WBS_SVG_RENDER.exportNativeSvg(model, options);

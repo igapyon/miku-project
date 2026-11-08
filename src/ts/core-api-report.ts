@@ -64,7 +64,7 @@
   const mikuprojectExcelIo = (globalThis as typeof globalThis & {
     __mikuprojectExcelIo?: {
       XlsxWorkbookCodec: new () => {
-        exportWorkbook: (workbook: XlsxWorkbookLike) => Uint8Array;
+        exportWorkbook: (workbook: XlsxWorkbookLike) => Promise<Uint8Array>;
       };
     };
   }).__mikuprojectExcelIo;
@@ -88,10 +88,10 @@
         options?: ReportProgressOptions & { labelMode?: "near" | "list" }
       ) => string;
       exportWeeklyNativeSvg: (model: ProjectModel, options?: ReportDisplayRangeOptions) => string;
-      exportMonthlyWbsCalendarSvgArchive: (model: ProjectModel) => {
+      exportMonthlyWbsCalendarSvgArchive: (model: ProjectModel) => Promise<{
         entries: Array<{ fileName: string; svg: string }>;
         zipBytes: Uint8Array;
-      };
+      }>;
     };
   }).__mikuprojectNativeSvg;
   if (!mikuprojectNativeSvg) {
@@ -108,16 +108,16 @@
   }
 
   globalThis.__mikuprojectCoreApiReport = {
-    exportAllReportEntries(
+    async exportAllReportEntries(
       model: ProjectModel,
       options: ReportProgressOptions = {}
-    ): Array<{ name: string; data: Uint8Array }> {
+    ): Promise<Array<{ name: string; data: Uint8Array }>> {
       const codec = new mikuprojectExcelIo.XlsxWorkbookCodec();
-      const monthlyArchive = mikuprojectNativeSvg.exportMonthlyWbsCalendarSvgArchive(model);
+      const monthlyArchive = await mikuprojectNativeSvg.exportMonthlyWbsCalendarSvgArchive(model);
       const entries = [
         {
           name: "wbs.xlsx",
-          data: codec.exportWorkbook(mikuprojectWbsXlsx.exportWbsWorkbook(model, options))
+          data: await codec.exportWorkbook(mikuprojectWbsXlsx.exportWbsWorkbook(model, options))
         },
         {
           name: "wbs.md",

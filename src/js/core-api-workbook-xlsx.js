@@ -12,8 +12,8 @@
         throw new Error("mikuproject Excel IO module is not loaded");
     }
     globalThis.__mikuprojectCoreApiWorkbookXlsx = {
-        decodeWorkbook: (bytes) => new mikuprojectExcelIo.XlsxWorkbookCodec().importWorkbook(bytes),
-        encodeWorkbook: (workbook) => new mikuprojectExcelIo.XlsxWorkbookCodec().exportWorkbook(workbook),
+        decodeWorkbook: async (bytes) => await new mikuprojectExcelIo.XlsxWorkbookCodec().importWorkbook(bytes),
+        encodeWorkbook: async (workbook) => await new mikuprojectExcelIo.XlsxWorkbookCodec().exportWorkbook(workbook),
         exportWorkbook: mikuprojectProjectXlsx.exportProjectWorkbook,
         importAsProjectModel: mikuprojectProjectXlsx.importProjectWorkbookAsProjectModel,
         importIntoProjectModel: mikuprojectProjectXlsx.importProjectWorkbook,

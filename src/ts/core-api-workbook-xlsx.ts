@@ -59,8 +59,8 @@
   const mikuprojectExcelIo = (globalThis as typeof globalThis & {
     __mikuprojectExcelIo?: {
       XlsxWorkbookCodec: new () => {
-        exportWorkbook: (workbook: XlsxWorkbookLike) => Uint8Array;
-        importWorkbook: (bytes: Uint8Array) => XlsxWorkbookLike;
+        exportWorkbook: (workbook: XlsxWorkbookLike) => Promise<Uint8Array>;
+        importWorkbook: (bytes: Uint8Array) => Promise<XlsxWorkbookLike>;
       };
     };
   }).__mikuprojectExcelIo;
@@ -71,8 +71,8 @@
 
   (globalThis as typeof globalThis & {
     __mikuprojectCoreApiWorkbookXlsx?: {
-      decodeWorkbook: (bytes: Uint8Array) => XlsxWorkbookLike;
-      encodeWorkbook: (workbook: XlsxWorkbookLike) => Uint8Array;
+      decodeWorkbook: (bytes: Uint8Array) => Promise<XlsxWorkbookLike>;
+      encodeWorkbook: (workbook: XlsxWorkbookLike) => Promise<Uint8Array>;
       exportWorkbook: (model: ProjectModel) => XlsxWorkbookLike;
       importAsProjectModel: (workbook: XlsxWorkbookLike) => ProjectModel;
       importIntoProjectModel: (workbook: XlsxWorkbookLike, baseModel: ProjectModel) => ProjectModel;
@@ -82,8 +82,8 @@
       ) => { model: ProjectModel; changes: ImportChange[] } | undefined;
     };
   }).__mikuprojectCoreApiWorkbookXlsx = {
-    decodeWorkbook: (bytes: Uint8Array) => new mikuprojectExcelIo.XlsxWorkbookCodec().importWorkbook(bytes),
-    encodeWorkbook: (workbook: XlsxWorkbookLike) => new mikuprojectExcelIo.XlsxWorkbookCodec().exportWorkbook(workbook),
+    decodeWorkbook: async (bytes: Uint8Array) => await new mikuprojectExcelIo.XlsxWorkbookCodec().importWorkbook(bytes),
+    encodeWorkbook: async (workbook: XlsxWorkbookLike) => await new mikuprojectExcelIo.XlsxWorkbookCodec().exportWorkbook(workbook),
     exportWorkbook: mikuprojectProjectXlsx.exportProjectWorkbook,
     importAsProjectModel: mikuprojectProjectXlsx.importProjectWorkbookAsProjectModel,
     importIntoProjectModel: mikuprojectProjectXlsx.importProjectWorkbook,

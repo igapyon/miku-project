@@ -74,6 +74,7 @@
     return table;
   }
 
+  // Retained for the report-all Node/Java byte-parity contract.
   function packZipEntries(entries: Array<{ name: string; data: Uint8Array }>): Uint8Array {
     const localParts: Uint8Array[] = [];
     const centralParts: Uint8Array[] = [];

@@ -46,7 +46,7 @@
           | { format: "patch_json"; document: unknown };
         mode: "replace" | "merge" | "patch";
         baseModel?: ProjectModel;
-      }) => unknown;
+      }) => Promise<unknown>;
     };
   }).__mikuprojectCoreApiExternalImport;
 

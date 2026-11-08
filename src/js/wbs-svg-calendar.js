@@ -158,7 +158,7 @@
             parts.push("</svg>");
             return parts.join("");
         }
-        function exportMonthlyWbsCalendarSvgArchive(model) {
+        async function exportMonthlyWbsCalendarSvgArchive(model) {
             const holidaySet = new Set(config.collectWbsHolidayDates(model));
             const nonWorkingDayTypes = config.collectProjectNonWorkingDayTypes(model);
             const months = buildProjectMonthKeys(model.project.startDate, model.project.finishDate);
@@ -170,7 +170,7 @@
                 name: `monthly-calendar/${entry.fileName}`,
                 data: config.encodeUtf8(entry.svg)
             }));
-            const zipBytes = config.packZip(zipEntries);
+            const zipBytes = await config.packZip(zipEntries);
             return {
                 entries,
                 zipBytes

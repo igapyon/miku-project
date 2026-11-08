@@ -76,10 +76,22 @@ function encodeUtf8(text) {
   return new TextEncoder().encode(text);
 }
 
+function computeCrc32(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc & 1) !== 0 ? (0xedb88320 ^ (crc >>> 1)) : (crc >>> 1);
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
 function buildDeflatedZipWithSingleEntry(name, text) {
   const nameBytes = encodeUtf8(name);
   const rawData = encodeUtf8(text);
   const compressedData = new Uint8Array(deflateRawSync(rawData));
+  const crc32 = computeCrc32(rawData);
 
   const localHeader = new Uint8Array(30 + nameBytes.length);
   const localView = new DataView(localHeader.buffer);
@@ -87,7 +99,7 @@ function buildDeflatedZipWithSingleEntry(name, text) {
   localView.setUint16(4, 20, true);
   localView.setUint16(6, 0, true);
   localView.setUint16(8, 8, true);
-  localView.setUint32(14, 0, true);
+  localView.setUint32(14, crc32, true);
   localView.setUint32(18, compressedData.byteLength, true);
   localView.setUint32(22, rawData.byteLength, true);
   localView.setUint16(26, nameBytes.length, true);
@@ -101,7 +113,7 @@ function buildDeflatedZipWithSingleEntry(name, text) {
   centralView.setUint16(6, 20, true);
   centralView.setUint16(8, 0, true);
   centralView.setUint16(10, 8, true);
-  centralView.setUint32(16, 0, true);
+  centralView.setUint32(16, crc32, true);
   centralView.setUint32(20, compressedData.byteLength, true);
   centralView.setUint32(24, rawData.byteLength, true);
   centralView.setUint16(28, nameBytes.length, true);
@@ -137,7 +149,7 @@ function buildDeflatedZipWithSingleEntry(name, text) {
 }
 
 describe("miku-project excel io", () => {
-  it("exports a minimal xlsx package with required workbook entries", () => {
+  it("exports a minimal xlsx package with required workbook entries", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -156,8 +168,8 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const entryNames = codec.listEntries(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const entryNames = await codec.listEntries(bytes);
 
     expect(bytes).toBeInstanceOf(Uint8Array);
     expect(bytes.byteLength).toBeGreaterThan(0);
@@ -171,7 +183,7 @@ describe("miku-project excel io", () => {
     ]);
   });
 
-  it("round-trips sheet names, sparse cells, formulas, and primitive cell values as text by default", () => {
+  it("round-trips sheet names, sparse cells, formulas, and primitive cell values as text by default", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -225,13 +237,13 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
 
     expect(imported).toEqual(workbook);
   });
 
-  it("writes string cells as text-formatted inline strings and preserves leading whitespace", () => {
+  it("writes string cells as text-formatted inline strings and preserves leading whitespace", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -246,17 +258,17 @@ describe("miku-project excel io", () => {
       }]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const entries = codec.unpackEntries(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const entries = await codec.unpackEntries(bytes);
     const sheetXml = new TextDecoder().decode(entries["xl/worksheets/sheet1.xml"]);
     const stylesXml = new TextDecoder().decode(entries["xl/styles.xml"]);
 
     expect(sheetXml).toContain('t="inlineStr"><is><t xml:space="preserve">  - round-trip</t></is></c>');
     expect(stylesXml).toContain('numFmtId="49"');
-    expect(codec.importWorkbook(bytes)).toEqual(workbook);
+    expect(await codec.importWorkbook(bytes)).toEqual(workbook);
   });
 
-  it("sanitizes XML-invalid control characters from cell strings", () => {
+  it("sanitizes XML-invalid control characters from cell strings", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -273,10 +285,10 @@ describe("miku-project excel io", () => {
       }]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const entries = codec.unpackEntries(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const entries = await codec.unpackEntries(bytes);
     const sheetXml = new TextDecoder().decode(entries["xl/worksheets/sheet1.xml"]);
-    const imported = codec.importWorkbook(bytes);
+    const imported = await codec.importWorkbook(bytes);
 
     expect(sheetXml).toContain("okbadtext");
     expect(sheetXml).not.toContain("\u0000");
@@ -287,7 +299,7 @@ describe("miku-project excel io", () => {
     expect(imported.sheets[0].rows[0].cells[3].value).toBe("beforemiddleafter");
   });
 
-  it("keeps explicitly formatted numeric cells as numeric values", () => {
+  it("keeps explicitly formatted numeric cells as numeric values", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -303,13 +315,13 @@ describe("miku-project excel io", () => {
       }]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
 
     expect(imported).toEqual(workbook);
   });
 
-  it("round-trips column widths, row heights, and basic cell formatting", () => {
+  it("round-trips column widths, row heights, and basic cell formatting", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -342,13 +354,13 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
 
     expect(imported).toEqual(workbook);
   });
 
-  it("round-trips hidden columns", () => {
+  it("round-trips hidden columns", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -373,16 +385,16 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
-    const sheetXml = decodeUtf8(codec.unpackEntries(bytes)["xl/worksheets/sheet1.xml"]);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
+    const sheetXml = decodeUtf8((await codec.unpackEntries(bytes))["xl/worksheets/sheet1.xml"]);
 
     expect(imported).toEqual(workbook);
     expect(sheetXml).toContain('min="2" max="2" width="18" customWidth="1" hidden="1"');
     expect(sheetXml).toContain('min="3" max="3" hidden="1"');
   });
 
-  it("round-trips wrapped text alignment", () => {
+  it("round-trips wrapped text alignment", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -400,15 +412,15 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
-    const stylesXml = decodeUtf8(codec.unpackEntries(bytes)["xl/styles.xml"]);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
+    const stylesXml = decodeUtf8((await codec.unpackEntries(bytes))["xl/styles.xml"]);
 
     expect(imported).toEqual(workbook);
     expect(stylesXml).toContain('wrapText="1"');
   });
 
-  it("round-trips bold, fill color, and border styles", () => {
+  it("round-trips bold, fill color, and border styles", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -431,13 +443,13 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
 
     expect(imported).toEqual(workbook);
   });
 
-  it("round-trips font size styles", () => {
+  it("round-trips font size styles", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -459,13 +471,13 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
 
     expect(imported).toEqual(workbook);
   });
 
-  it("round-trips merged cell ranges", () => {
+  it("round-trips merged cell ranges", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -503,8 +515,8 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
 
     expect(imported.sheets[0].name).toBe("Merged");
     expect(imported.sheets[0].mergedRanges).toEqual(["A1:B1", "A3:A4"]);
@@ -513,7 +525,7 @@ describe("miku-project excel io", () => {
     expect(imported.sheets[0].rows[3].cells[1].value).toBe("Value3");
   });
 
-  it("round-trips frozen pane settings", () => {
+  it("round-trips frozen pane settings", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -546,9 +558,9 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const imported = codec.importWorkbook(bytes);
-    const sheetXml = decodeUtf8(codec.unpackEntries(bytes)["xl/worksheets/sheet1.xml"]);
+    const bytes = await codec.exportWorkbook(workbook);
+    const imported = await codec.importWorkbook(bytes);
+    const sheetXml = decodeUtf8((await codec.unpackEntries(bytes))["xl/worksheets/sheet1.xml"]);
 
     expect(imported).toEqual(workbook);
     expect(sheetXml).toContain("<sheetViews>");
@@ -558,30 +570,30 @@ describe("miku-project excel io", () => {
     expect(sheetXml).toContain('state="frozen"');
   });
 
-  it("rejects duplicate or invalid sheet names", () => {
+  it("rejects duplicate or invalid sheet names", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
 
-    expect(() => codec.exportWorkbook({
+    await expect(codec.exportWorkbook({
       sheets: [
         { name: "Same", rows: [] },
         { name: "Same", rows: [] }
       ]
-    })).toThrow(/sheet name/i);
+    })).rejects.toThrow(/sheet name/i);
 
-    expect(() => codec.exportWorkbook({
+    await expect(codec.exportWorkbook({
       sheets: [
         { name: "Bad/Name", rows: [] }
       ]
-    })).toThrow(/sheet name/i);
+    })).rejects.toThrow(/sheet name/i);
   });
 
-  it("rejects invalid workbook layout and data validation definitions", () => {
+  it("rejects invalid workbook layout and data validation definitions", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
 
-    expect(() => codec.exportWorkbook({ sheets: [] })).toThrow(/at least one sheet/i);
-    expect(() => codec.exportWorkbook({
+    await expect(codec.exportWorkbook({ sheets: [] })).rejects.toThrow(/at least one sheet/i);
+    await expect(codec.exportWorkbook({
       sheets: [
         {
           name: "Sheet1",
@@ -589,8 +601,8 @@ describe("miku-project excel io", () => {
           rows: []
         }
       ]
-    })).toThrow(/Freeze pane rowSplit/i);
-    expect(() => codec.exportWorkbook({
+    })).rejects.toThrow(/Freeze pane rowSplit/i);
+    await expect(codec.exportWorkbook({
       sheets: [
         {
           name: "Sheet1",
@@ -598,8 +610,8 @@ describe("miku-project excel io", () => {
           rows: []
         }
       ]
-    })).toThrow(/formula1/i);
-    expect(() => codec.exportWorkbook({
+    })).rejects.toThrow(/formula1/i);
+    await expect(codec.exportWorkbook({
       sheets: [
         {
           name: "Sheet1",
@@ -607,10 +619,10 @@ describe("miku-project excel io", () => {
           rows: []
         }
       ]
-    })).toThrow(/Unsupported data validation type/i);
+    })).rejects.toThrow(/Unsupported data validation type/i);
   });
 
-  it("matches async workbook helpers to their sync counterparts", async () => {
+  it("keeps async workbook aliases on the canonical codec methods", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
     const workbook = {
@@ -629,22 +641,24 @@ describe("miku-project excel io", () => {
       ]
     };
 
-    const bytes = codec.exportWorkbook(workbook);
-    const syncWorkbook = codec.importWorkbook(bytes);
-    const syncEntries = codec.listEntries(bytes);
-    const asyncEntries = await codec.listEntriesAsync(bytes);
-    const asyncWorkbook = await codec.importWorkbookAsync(bytes);
-    const unpackedAsync = await codec.unpackEntriesAsync(bytes);
+    const bytes = await codec.exportWorkbook(workbook);
+    const workbookResult = await codec.importWorkbook(bytes);
+    const entryNames = await codec.listEntries(bytes);
+    const aliasEntries = await codec.listEntriesAsync(bytes);
+    const aliasWorkbook = await codec.importWorkbookAsync(bytes);
+    const unpacked = await codec.unpackEntries(bytes);
+    const aliasUnpacked = await codec.unpackEntriesAsync(bytes);
 
-    expect(asyncEntries).toEqual(syncEntries);
-    expect(asyncWorkbook).toEqual(syncWorkbook);
-    expect(Object.keys(unpackedAsync).sort()).toEqual(syncEntries);
+    expect(aliasEntries).toEqual(entryNames);
+    expect(aliasWorkbook).toEqual(workbookResult);
+    expect(Object.keys(unpacked).sort()).toEqual(entryNames);
+    expect(aliasUnpacked).toEqual(unpacked);
   });
 
-  it("exposes workbook xml for inspection after unzip", () => {
+  it("exposes workbook xml for inspection after unzip", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
-    const bytes = codec.exportWorkbook({
+    const bytes = await codec.exportWorkbook({
       sheets: [
         {
           name: "One",
@@ -660,7 +674,7 @@ describe("miku-project excel io", () => {
       ]
     });
 
-    const entries = codec.unpackEntries(bytes);
+    const entries = await codec.unpackEntries(bytes);
 
     expect(decodeUtf8(entries["xl/workbook.xml"])).toContain("<sheet");
     expect(decodeUtf8(entries["xl/workbook.xml"])).toContain('name="One"');
@@ -669,10 +683,10 @@ describe("miku-project excel io", () => {
     expect(decodeUtf8(entries["xl/worksheets/sheet1.xml"])).toContain("<t>1</t>");
   });
 
-  it("writes styles and sheet layout xml when formatting is present", () => {
+  it("writes styles and sheet layout xml when formatting is present", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
-    const bytes = codec.exportWorkbook({
+    const bytes = await codec.exportWorkbook({
       sheets: [
         {
           name: "Styled",
@@ -691,7 +705,7 @@ describe("miku-project excel io", () => {
       ]
     });
 
-    const entries = codec.unpackEntries(bytes);
+    const entries = await codec.unpackEntries(bytes);
 
     expect(Object.keys(entries).sort()).toContain("xl/styles.xml");
     expect(decodeUtf8(entries["[Content_Types].xml"])).toContain("/xl/styles.xml");
@@ -705,10 +719,10 @@ describe("miku-project excel io", () => {
     expect(decodeUtf8(entries["xl/worksheets/sheet1.xml"])).toContain(" s=\"1\"");
   });
 
-  it("writes empty styled cells when a fill-only cell is present", () => {
+  it("writes empty styled cells when a fill-only cell is present", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
-    const bytes = codec.exportWorkbook({
+    const bytes = await codec.exportWorkbook({
       sheets: [
         {
           name: "StyledGap",
@@ -724,17 +738,17 @@ describe("miku-project excel io", () => {
       ]
     });
 
-    const sheetXml = decodeUtf8(codec.unpackEntries(bytes)["xl/worksheets/sheet1.xml"]);
+    const sheetXml = decodeUtf8((await codec.unpackEntries(bytes))["xl/worksheets/sheet1.xml"]);
 
     expect(sheetXml).toContain('r="A1"');
     expect(sheetXml).toContain('r="B1"');
     expect(sheetXml).toMatch(/<c r="B1" s="\d+"\/>/);
   });
 
-  it("writes font, fill, and border definitions when style options are present", () => {
+  it("writes font, fill, and border definitions when style options are present", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
-    const bytes = codec.exportWorkbook({
+    const bytes = await codec.exportWorkbook({
       sheets: [
         {
           name: "Styled",
@@ -754,7 +768,7 @@ describe("miku-project excel io", () => {
       ]
     });
 
-    const stylesXml = decodeUtf8(codec.unpackEntries(bytes)["xl/styles.xml"]);
+    const stylesXml = decodeUtf8((await codec.unpackEntries(bytes))["xl/styles.xml"]);
 
     expect(stylesXml).toContain("<b/>");
     expect(stylesXml).toContain('patternType="gray125"');
@@ -766,10 +780,10 @@ describe("miku-project excel io", () => {
     expect(stylesXml).toContain("applyFont=\"1\"");
   });
 
-  it("writes required default fills before custom solid fills", () => {
+  it("writes required default fills before custom solid fills", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
-    const bytes = codec.exportWorkbook({
+    const bytes = await codec.exportWorkbook({
       sheets: [{
         name: "Styled",
         rows: [{
@@ -780,16 +794,16 @@ describe("miku-project excel io", () => {
       }]
     });
 
-    const stylesXml = decodeUtf8(codec.unpackEntries(bytes)["xl/styles.xml"]);
+    const stylesXml = decodeUtf8((await codec.unpackEntries(bytes))["xl/styles.xml"]);
 
     expect(stylesXml).toContain('<fills count="3">');
     expect(stylesXml).toContain('<fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9EAF7"');
   });
 
-  it("writes font size definitions when font size is present", () => {
+  it("writes font size definitions when font size is present", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
-    const bytes = codec.exportWorkbook({
+    const bytes = await codec.exportWorkbook({
       sheets: [
         {
           name: "FontSized",
@@ -807,16 +821,16 @@ describe("miku-project excel io", () => {
       ]
     });
 
-    const stylesXml = decodeUtf8(codec.unpackEntries(bytes)["xl/styles.xml"]);
+    const stylesXml = decodeUtf8((await codec.unpackEntries(bytes))["xl/styles.xml"]);
 
     expect(stylesXml).toContain('<sz val="16"/>');
     expect(stylesXml).toContain("applyFont=\"1\"");
   });
 
-  it("writes mergeCells xml when merged ranges are present", () => {
+  it("writes mergeCells xml when merged ranges are present", async () => {
     const excelIo = bootExcelIoModule();
     const codec = new excelIo.XlsxWorkbookCodec();
-    const bytes = codec.exportWorkbook({
+    const bytes = await codec.exportWorkbook({
       sheets: [
         {
           name: "Merged",
@@ -833,7 +847,7 @@ describe("miku-project excel io", () => {
       ]
     });
 
-    const worksheetXml = decodeUtf8(codec.unpackEntries(bytes)["xl/worksheets/sheet1.xml"]);
+    const worksheetXml = decodeUtf8((await codec.unpackEntries(bytes))["xl/worksheets/sheet1.xml"]);
 
     expect(worksheetXml).toContain("<mergeCells");
     expect(worksheetXml).toContain('ref="A1:B1"');

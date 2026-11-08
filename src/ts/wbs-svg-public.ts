@@ -23,7 +23,7 @@
   type NativeSvgFacade = {
     exportNativeSvg(model: ProjectModel, options?: NativeSvgExportOptions): string;
     exportWeeklyNativeSvg(model: ProjectModel, options?: NativeSvgExportOptions): string;
-    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): MonthlyCalendarSvgArchive;
+    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): Promise<MonthlyCalendarSvgArchive>;
     collectWbsHolidayDates(model: ProjectModel): string[];
   };
 
@@ -31,7 +31,7 @@
     collectWbsHolidayDates(model: ProjectModel): string[];
     exportNativeSvg(model: ProjectModel, options?: NativeSvgExportOptions): string;
     exportWeeklyNativeSvg(model: ProjectModel, options?: NativeSvgExportOptions): string;
-    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): MonthlyCalendarSvgArchive;
+    exportMonthlyWbsCalendarSvgArchive(model: ProjectModel): Promise<MonthlyCalendarSvgArchive>;
   };
 
   function createNativeSvgFacade(config: CreateNativeSvgFacadeConfig): NativeSvgFacade {

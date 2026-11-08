@@ -4,9 +4,9 @@
  */
 (() => {
     const TEXT_ENCODER = new TextEncoder();
-    const TEXT_DECODER = new TextDecoder();
     const CRC32_TABLE = buildCrc32Table();
     const MS_OFFICE_CORE = globalThis.__mikuprojectMsOfficeCore;
+    // Keep the legacy XLSX writer: its zero DOS timestamp and header fields are part of the existing Node/Java byte parity.
     function packZip(entries) {
         const localParts = [];
         const centralParts = [];
@@ -66,51 +66,11 @@
         endView.setUint16(20, 0, true);
         return concatUint8Arrays([...localParts, ...centralParts, endOfCentralDirectory]);
     }
-    function unpackZip(bytes) {
-        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-        const endOffset = findEndOfCentralDirectoryOffset(bytes);
-        const totalEntries = view.getUint16(endOffset + 10, true);
-        const centralDirectoryOffset = view.getUint32(endOffset + 16, true);
-        const entries = {};
-        let pointer = centralDirectoryOffset;
-        for (let index = 0; index < totalEntries; index += 1) {
-            if (view.getUint32(pointer, true) !== 0x02014b50) {
-                throw new Error("Invalid ZIP central directory header");
-            }
-            const compressionMethod = view.getUint16(pointer + 10, true);
-            const compressedSize = view.getUint32(pointer + 20, true);
-            const uncompressedSize = view.getUint32(pointer + 24, true);
-            const fileNameLength = view.getUint16(pointer + 28, true);
-            const extraLength = view.getUint16(pointer + 30, true);
-            const commentLength = view.getUint16(pointer + 32, true);
-            const localHeaderOffset = view.getUint32(pointer + 42, true);
-            const fileName = decodeUtf8(bytes.subarray(pointer + 46, pointer + 46 + fileNameLength));
-            const localView = new DataView(bytes.buffer, bytes.byteOffset + localHeaderOffset, bytes.byteLength - localHeaderOffset);
-            if (localView.getUint32(0, true) !== 0x04034b50) {
-                throw new Error(`Invalid ZIP local header for entry: ${fileName}`);
-            }
-            const localFileNameLength = localView.getUint16(26, true);
-            const localExtraLength = localView.getUint16(28, true);
-            const dataOffset = localHeaderOffset + 30 + localFileNameLength + localExtraLength;
-            const data = bytes.slice(dataOffset, dataOffset + compressedSize);
-            if (compressionMethod !== 0) {
-                throw new Error(`Unsupported ZIP compression method for entry ${fileName}: ${compressionMethod}`);
-            }
-            if (compressedSize !== uncompressedSize) {
-                throw new Error(`Stored ZIP entry size mismatch: ${fileName}`);
-            }
-            entries[fileName] = data;
-            pointer += 46 + fileNameLength + extraLength + commentLength;
-        }
-        return entries;
-    }
     async function unpackZipAsync(bytes) {
         if (!MS_OFFICE_CORE) {
             throw new Error("miku-ms-office-core module is not loaded");
         }
-        const result = await MS_OFFICE_CORE.readZipPackageAsync(bytes, {
-            inflateRaw: inflateDeflateRaw
-        });
+        const result = await MS_OFFICE_CORE.readZipPackage(bytes);
         const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
         if (errors.length > 0) {
             throw new Error(errors.map((diagnostic) => {
@@ -128,36 +88,6 @@
             entries[entry.path] = entry.data;
         }
         return entries;
-    }
-    async function inflateDeflateRaw(compressed, expectedSize, fileName) {
-        var _a;
-        if (typeof DecompressionStream !== "function") {
-            throw new Error(`ZIP deflate compression is not supported in this runtime: ${fileName}`);
-        }
-        const sourceStream = typeof Blob === "function" && typeof ((_a = Blob.prototype) === null || _a === void 0 ? void 0 : _a.stream) === "function"
-            ? new Blob([compressed]).stream()
-            : new Response(compressed).body;
-        if (!sourceStream) {
-            throw new Error(`ZIP deflate stream source is not available in this runtime: ${fileName}`);
-        }
-        const decompressedStream = sourceStream.pipeThrough(new DecompressionStream("deflate-raw"));
-        const buffer = await new Response(decompressedStream).arrayBuffer();
-        const inflated = new Uint8Array(buffer);
-        if (inflated.byteLength !== expectedSize) {
-            throw new Error(`Deflated ZIP entry size mismatch: ${fileName}`);
-        }
-        return inflated;
-    }
-    function findEndOfCentralDirectoryOffset(bytes) {
-        for (let index = bytes.byteLength - 22; index >= 0; index -= 1) {
-            if (bytes[index] === 0x50 &&
-                bytes[index + 1] === 0x4b &&
-                bytes[index + 2] === 0x05 &&
-                bytes[index + 3] === 0x06) {
-                return index;
-            }
-        }
-        throw new Error("ZIP end of central directory not found");
     }
     function concatUint8Arrays(parts) {
         const totalLength = parts.reduce((sum, part) => sum + part.byteLength, 0);
@@ -190,12 +120,8 @@
     function encodeUtf8(value) {
         return TEXT_ENCODER.encode(value);
     }
-    function decodeUtf8(bytes) {
-        return TEXT_DECODER.decode(bytes);
-    }
     globalThis.__mikuprojectExcelIoZip = {
         packZip,
-        unpackZip,
         unpackZipAsync
     };
 })();

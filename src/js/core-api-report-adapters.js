@@ -34,8 +34,8 @@
     globalThis.__mikuprojectCoreApiReportAdapters = {
         report: {
             all: {
-                export: (model, options = {}) => {
-                    const entries = mikuprojectCoreApiReport.exportAllReportEntries(model, options);
+                export: async (model, options = {}) => {
+                    const entries = await mikuprojectCoreApiReport.exportAllReportEntries(model, options);
                     return {
                         entries,
                         zipBytes: mikuprojectMainUtil.packZipEntries(entries)
@@ -44,7 +44,7 @@
             },
             wbsXlsx: {
                 exportWorkbook: mikuprojectWbsXlsx.exportWbsWorkbook,
-                exportBytes: (model, options = {}) => mikuprojectCoreApiWorkbook.xlsx.encodeWorkbook(mikuprojectWbsXlsx.exportWbsWorkbook(model, options))
+                exportBytes: async (model, options = {}) => await mikuprojectCoreApiWorkbook.xlsx.encodeWorkbook(mikuprojectWbsXlsx.exportWbsWorkbook(model, options))
             },
             svg: {
                 exportDaily: mikuprojectNativeSvg.exportNativeSvg,

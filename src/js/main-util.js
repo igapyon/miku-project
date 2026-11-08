@@ -66,6 +66,7 @@
         }
         return table;
     }
+    // Retained for the report-all Node/Java byte-parity contract.
     function packZipEntries(entries) {
         const localParts = [];
         const centralParts = [];

@@ -55,6 +55,8 @@ CLI の使い始め方、AI JSON API、runtime contract はこの repository の
 
 ## 開発
 
+Node.js 22 以上が必要です。
+
 ```bash
 npm install
 npm run build
@@ -78,6 +80,8 @@ miku-soft の共有標準と、このリポジトリの追従状況は [docs/mik
 CLI、Java CLI、Agent Skillsを中心にしたゼロベース再設計は、[2026-08-09版仕様](docs/miku-project-zero-base-spec-v20260809.md)、[2026-08-10版実施計画](docs/miku-project-zero-base-implementation-plan-v20260810.md)、[Gate G4 readiness](docs/miku-project-gate-g4-readiness-v20260814.md)、[Java contract handoff v1.0.3](docs/miku-project-java-contract-handoff-v1.0.3.md)、[semantic contract v1](docs/miku-project-semantic-contract-v1.md)、[format and loss contract v1](docs/miku-project-format-and-loss-contract-v1.md)、[change contract v1](docs/miku-project-change-contract-v1.md)、[CLI contract v1](docs/miku-project-cli-contract-v1.md)、[CLI result and diagnostics contract v1](docs/miku-project-cli-result-contract-v1.md)、[runtime capability contract v1](docs/miku-project-runtime-capability-contract-v1.md)、[runtime manifest contract v1](docs/miku-project-runtime-manifest-contract-v1.md)、[conformance corpus v1](docs/miku-project-conformance-corpus-v1.md)、[human gate and next action contract v1](docs/miku-project-human-gate-and-next-action-contract-v1.md) を参照してください。WebとMCPは、この初期計画では後続検討です。
 
 ## 再利用 API
+
+公開 JavaScript API の Promise 化を含む破壊的変更を反映するため、次の製品版は `2.0.0`、集約 API の互換性識別子は `2` です。CLI v1 と保存済み `mikuproject_workbook_json` v1 は変更しません。
 
 Web App / Agent Skills / CLI / MCP から使いやすい集約入口として `globalThis.__mikuProjectCoreApi` を公開しています。
 

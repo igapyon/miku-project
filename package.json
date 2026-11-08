@@ -1,6 +1,6 @@
 {
   "name": "miku-project",
-  "version": "1.1.2",
+  "version": "2.0.1",
   "private": true,
   "description": "Local HTML tool for MS Project XML round-trip experiments.",
   "license": "Apache-2.0",
@@ -8,6 +8,9 @@
   "bin": {
     "miku-project": "scripts/miku-project-cli.mjs",
     "mikuproject": "scripts/miku-project-cli.mjs"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "scripts": {
     "build": "npm run build:core && npm run build:browser-runtime && npm run build:cli-bundle && npm run test:fast",
